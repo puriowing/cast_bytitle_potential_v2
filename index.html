@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAST - 作品ポテンシャル分析ダッシュボード</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 1.25rem;
+            transition: all 0.2s;
+            height: 100%;
+        }
+        .card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-2px);
+        }
+
+        /* Tab Navigation Styles */
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            font-weight: 700;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-tab:hover {
+            color: #374151;
+            background-color: #f9fafb;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        .nav-tab.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+            background-color: transparent;
+        }
+        .nav-tab.active-teal {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+
+        /* Table Styles */
+        .rank-table th, .rank-table td {
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .rank-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            background-color: #f9fafb;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .rank-table th:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .rank-table td.text-left { text-align: left; }
+
+        /* Sort Icons */
+        .sort-icon {
+            display: inline-block;
+            margin-left: 4px;
+            width: 12px;
+            height: 12px;
+            vertical-align: middle;
+            color: #9ca3af;
+        }
+        .th-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        /* Badge Styles */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .badge-indigo { background: #e0e7ff; color: #4338ca; }
+        .badge-teal { background: #ccfbf1; color: #115e59; }
+        .score-badge {
+            font-weight: 700;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.375rem;
+            min-width: 2.5rem;
+            display: inline-block;
+        }
+        .bg-score-high { background-color: #d1fae5; color: #065f46; }
+        .bg-score-mid { background-color: #fef3c7; color: #92400e; }
+        .bg-score-low { background-color: #f3f4f6; color: #6b7280; }
+
+        /* Map Toggle Buttons */
+        .map-btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: #4b5563;
+        }
+        .map-btn.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="pb-12">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="bar-chart-2" class="h-8 w-8 text-gray-800"></i>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight text-gray-900 leading-tight">CAST Dashboard</h1>
+                        <p class="text-xs text-gray-500 font-medium">作品ポテンシャル分析</p>
+                    </div>
+                </div>
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs text-gray-500">データ更新日</p>
+                    <p class="text-sm font-bold text-gray-800">2025.12.01</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <div id="tab-now" onclick="switchTab('now')" class="nav-tab active">
+                <i data-lucide="film" class="w-5 h-5"></i>
+                <div>
+                    <div class="text-sm leading-none">上映中作品</div>
+                    <div class="text-[10px] font-normal opacity-70">Now Playing Analysis</div>
+                </div>
+            </div>
+            <div id="tab-future" onclick="switchTab('future')" class="nav-tab">
+                <i data-lucide="clapperboard" class="w-5 h-5"></i>
+                <div>
+                    <div class="text-sm leading-none">予告編・次回作</div>
+                    <div class="text-[10px] font-normal opacity-70">Trailer & Upcoming</div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ========================================== -->
+        <!-- TAB 1: NOW PLAYING (上映中作品分析) -->
+        <!-- ========================================== -->
+        <div id="content-now" class="fade-in space-y-8">
+
+            <!-- NEW: Now Playing Hero Header -->
+            <section class="bg-gradient-to-r from-indigo-800 to-indigo-600 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-white/20 px-2 py-1 rounded text-xs font-bold">作品満足度調査</span>
+                        <span class="bg-white/20 px-2 py-1 rounded text-xs font-bold">サンプル数: 15,300</span>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-1">上映中作品ポテンシャル分析</h2>
+                    <p class="text-indigo-100 text-sm">鑑賞直後の「熱量」と「属性」から、興行の伸びしろと収益最大化ポイントを可視化</p>
+                </div>
+                <i data-lucide="activity" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/10 w-32 h-32"></i>
+            </section>
+
+            <!-- Hero Stats (Category Leaders) -->
+            <section>
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-lg font-bold text-indigo-900">部門別 No.1 作品</h2>
+                    <span class="badge badge-indigo">現在稼働中</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Long Run -->
+                    <div class="card border-l-4 border-green-500">
+                        <div class="text-xs text-gray-500 font-bold uppercase mb-1 flex items-center gap-1">
+                            <i data-lucide="trending-up" class="w-3 h-3 text-green-600"></i> ロングラン指数
+                        </div>
+                        <h3 class="font-bold text-gray-900 truncate">愛と追憶のパリ</h3>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span class="text-2xl font-black text-gray-800">92</span>
+                            <span class="text-xs text-gray-500">pt</span>
+                        </div>
+                    </div>
+                    <!-- Light User -->
+                    <div class="card border-l-4 border-blue-500">
+                        <div class="text-xs text-gray-500 font-bold uppercase mb-1 flex items-center gap-1">
+                            <i data-lucide="users" class="w-3 h-3 text-blue-600"></i> ライト層流入率
+                        </div>
+                        <h3 class="font-bold text-gray-900 truncate">名探偵の休日</h3>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span class="text-2xl font-black text-gray-800">42.5</span>
+                            <span class="text-xs text-gray-500">%</span>
+                        </div>
+                    </div>
+                    <!-- Concession -->
+                    <div class="card border-l-4 border-orange-500">
+                        <div class="text-xs text-gray-500 font-bold uppercase mb-1 flex items-center gap-1">
+                            <i data-lucide="popcorn" class="w-3 h-3 text-orange-600"></i> 飲食購入率
+                        </div>
+                        <h3 class="font-bold text-gray-900 truncate">ギャラクシー・ウォーズ</h3>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span class="text-2xl font-black text-gray-800">52.0</span>
+                            <span class="text-xs text-gray-500">%</span>
+                        </div>
+                    </div>
+                    <!-- NPS -->
+                    <div class="card border-l-4 border-red-500">
+                        <div class="text-xs text-gray-500 font-bold uppercase mb-1 flex items-center gap-1">
+                            <i data-lucide="flame" class="w-3 h-3 text-red-600"></i> 推奨熱量 (NPS)
+                        </div>
+                        <h3 class="font-bold text-gray-900 truncate">青空の向こう側</h3>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span class="text-2xl font-black text-gray-800">88.2</span>
+                            <span class="text-xs text-gray-500">pt</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Potential Map (Scatter) -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="crosshair" class="w-5 h-5 text-indigo-600"></i> ポテンシャル・マップ
+                        </h3>
+                        <div class="flex gap-2">
+                            <button onclick="updateNowChart('potential')" id="btn-now-potential" class="map-btn active">動員力</button>
+                            <button onclick="updateNowChart('revenue')" id="btn-now-revenue" class="map-btn">収益力</button>
+                        </div>
+                    </div>
+                    <div class="h-80 w-full relative">
+                        <canvas id="nowPlayingScatter"></canvas>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500 flex justify-between px-2">
+                        <span id="now-axis-x">横軸: 推奨熱量 (NPS)</span>
+                        <span id="now-axis-y">縦軸: ライト層流入率</span>
+                    </div>
+
+                    <!-- Chart Explanation Section -->
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-600" id="map-explanation">
+                        <!-- Content populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Actionable Insight Panel -->
+                <div class="card bg-slate-900 text-white border-none">
+                    <h3 class="font-bold mb-4 flex items-center gap-2 text-indigo-300">
+                        <i data-lucide="lightbulb" class="w-5 h-5"></i> 戦略アクション
+                    </h3>
+                    <div class="space-y-6">
+                        <div class="border-l-2 border-red-500 pl-3">
+                            <div class="text-xs text-red-400 font-bold mb-1">カルトヒット育成</div>
+                            <div class="font-bold text-sm mb-1">青空の向こう側</div>
+                            <p class="text-xs text-gray-400">NPS88.2と圧倒的。現在はコア層中心だが、口コミ拡散でマス層へ広がる予兆あり。上映回数を維持しSNSキャンペーンを強化。</p>
+                        </div>
+                        <div class="border-l-2 border-orange-500 pl-3">
+                            <div class="text-xs text-orange-400 font-bold mb-1">収益最大化</div>
+                            <div class="font-bold text-sm mb-1">ギャラクシー・ウォーズ</div>
+                            <p class="text-xs text-gray-400">飲食率52%・特殊形式希望28%。回転率よりも「単価」重視。IMAX枠の維持とセット販売推奨。</p>
+                        </div>
+                        <div class="border-l-2 border-green-500 pl-3">
+                            <div class="text-xs text-green-400 font-bold mb-1">ロングラン安定</div>
+                            <div class="font-bold text-sm mb-1">森の精霊たち</div>
+                            <p class="text-xs text-gray-400">NPS85.5で評価が非常に安定。平日シニア層の稼働が高い。中箱・小箱での長期上映に最適。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Integrated Table -->
+            <section class="card overflow-hidden p-0">
+                <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800">全作品指標一覧</h3>
+                    <button class="text-xs text-indigo-600 hover:underline">詳細CSVダウンロード</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full rank-table" id="integrated-table">
+                        <thead>
+                            <tr>
+                                <th class="w-12" onclick="sortMovies('rank')">
+                                    <div class="th-content">
+                                        <span>順位</span>
+                                        <i data-lucide="arrow-up-down" class="sort-icon" id="icon-rank"></i>
+                                    </div>
+                                </th>
+                                <th class="text-left" onclick="sortMovies('title')">
+                                    <div class="th-content items-start">
+                                        <span>作品名</span>
+                                        <i data-lucide="arrow-up-down" class="sort-icon" id="icon-title"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortMovies('nps')">
+                                    <div class="th-content">
+                                        <div class="flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i>NPS</div>
+                                        <i data-lucide="arrow-up-down" class="sort-icon" id="icon-nps"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortMovies('light')">
+                                    <div class="th-content">
+                                        <div class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>ライト層</div>
+                                        <i data-lucide="arrow-up-down" class="sort-icon" id="icon-light"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortMovies('special')">
+                                    <div class="th-content">
+                                        <div class="flex items-center gap-1"><i data-lucide="gem" class="w-3 h-3"></i>特殊形式</div>
+                                        <i data-lucide="arrow-up-down" class="sort-icon" id="icon-special"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortMovies('food')">
+                                    <div class="th-content">
+                                        <div class="flex items-center gap-1"><i data-lucide="popcorn" class="w-3 h-3"></i>飲食率</div>
+                                        <i data-lucide="arrow-up-down" class="sort-icon" id="icon-food"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortMovies('group')">
+                                    <div class="th-content">
+                                        <div class="flex items-center gap-1"><i data-lucide="heart-handshake" class="w-3 h-3"></i>グループ</div>
+                                        <i data-lucide="arrow-up-down" class="sort-icon" id="icon-group"></i>
+                                    </div>
+                                </th>
+                                <th class="w-24">AI判定</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-table-body" class="text-sm">
+                            <!-- Rows will be populated by JS -->
+                        </tbody>
+                    </table>
+                    <div class="text-center py-4 bg-white border-t border-gray-100">
+                        <button id="btn-load-more" onclick="loadMoreMovies()" class="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center justify-center gap-1 w-full">
+                            <span>もっと見る (残り5件)</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- TAB 2: FUTURE / TRAILERS (予告編・次回作分析) -->
+        <!-- ========================================== -->
+        <div id="content-future" class="hidden fade-in space-y-8">
+
+            <!-- Future Hero -->
+            <section class="bg-gradient-to-r from-teal-800 to-teal-600 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-white/20 px-2 py-1 rounded text-xs font-bold">Q17 予告編調査</span>
+                        <span class="bg-white/20 px-2 py-1 rounded text-xs font-bold">サンプル数: 2,450</span>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-1">次回ヒット作予報</h2>
+                    <p class="text-teal-100 text-sm">現在上映中の作品鑑賞者が「次に観たい」と回答した予告編データを分析</p>
+                </div>
+                <i data-lucide="radar" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/10 w-32 h-32"></i>
+            </section>
+
+            <!-- NEW: Top Section - Trailer Sensitivity Analysis -->
+            <section class="card p-5">
+                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+                    <div>
+                        <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="eye" class="w-5 h-5 text-indigo-500"></i> 予告編感度 (Audience Sensitivity)
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Q8「来場理由」で「予告編」を選択した割合。この数値が高いほど、予告編編成による動員効果が高い。
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400 font-bold uppercase">Average Score</div>
+                        <div class="text-3xl font-black text-indigo-600">35.2<span class="text-sm text-gray-500 ml-1">%</span></div>
+                    </div>
+                </div>
+
+                <!-- ADDED: Trend Chart -->
+                <div class="mb-6 pb-6 border-b border-gray-100">
+                    <h4 class="text-xs font-bold text-gray-500 mb-3 flex items-center gap-1">
+                        <i data-lucide="trending-up" class="w-3 h-3"></i> 感度推移 (直近6ヶ月)
+                    </h4>
+                    <div class="h-48 relative w-full">
+                        <canvas id="sensitivityTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Chart 1: Gender/Age -->
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 mb-3 flex items-center gap-1">
+                            <i data-lucide="users" class="w-3 h-3"></i> 性年代別 感度 (Q21)
+                        </h4>
+                        <div class="h-48 relative">
+                            <canvas id="sensitivityDemoChart"></canvas>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-2 text-center">
+                            ※20代男性が最も予告編を見て来場を決めている
+                        </p>
+                    </div>
+
+                    <!-- Chart 2: Frequency -->
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 mb-3 flex items-center gap-1">
+                            <i data-lucide="activity" class="w-3 h-3"></i> 鑑賞頻度別 感度 (Q23)
+                        </h4>
+                        <div class="h-48 relative">
+                            <canvas id="sensitivityFreqChart"></canvas>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-2 text-center">
+                            ※ヘビーユーザーほど予告編の影響を受けやすい
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Trailer Ranking Chart -->
+                <div class="card flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="trophy" class="w-5 h-5 text-yellow-500"></i> 予告編反応ランキング
+                            </h3>
+                            <span class="text-xs text-gray-400">「観たい」回答率</span>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="trailerRankingChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Target -->
+                    <div class="mt-6 pt-4 border-t border-gray-100">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="crosshair" class="w-4 h-4 text-pink-500"></i>
+                                <span class="text-xs font-bold text-gray-600">No.1作品(スペース・アドベンチャー)の支持層</span>
+                            </div>
+                            <div class="text-sm font-bold text-gray-800 mb-1">男性 20-30代</div>
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <span>支持率</span>
+                                <div class="flex-grow bg-gray-200 rounded-full h-1.5 w-16">
+                                    <div class="bg-pink-500 h-1.5 rounded-full" style="width: 65%"></div>
+                                </div>
+                                <span>65%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Trailer Positioning Map -->
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="map" class="w-5 h-5 text-teal-600"></i> 次回作ポジショニング
+                        </h3>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="trailerPositionChart"></canvas>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500 flex justify-between px-2">
+                        <span>横軸: ターゲット年齢層 (若年⇔シニア)</span>
+                        <span>縦軸: 興味関心度 (Niche⇔Mass)</span>
+                    </div>
+
+                    <!-- Trailer Map Explanation -->
+                    <div class="mt-4 p-3 bg-teal-50 rounded-lg border border-teal-100 text-sm text-gray-600">
+                        <div class="flex items-center gap-2 mb-2 font-bold text-teal-800">
+                            <i data-lucide="info" class="w-4 h-4"></i> 次回作マップの見方
+                        </div>
+                        <ul class="space-y-1 list-disc list-inside text-xs">
+                            <li><strong class="text-gray-900">左上 (若年 × Mass)</strong>：Z世代中心にバズる可能性大。SNS拡散を狙うべき「次世代ヒット」。</li>
+                            <li><strong class="text-gray-900">右上 (シニア × Mass)</strong>：幅広い層に安定して受ける「王道作品」。テレビCM等が有効。</li>
+                            <li><strong class="text-gray-900">下半分 (Niche)</strong>：特定のファン層に深く刺さる作品。ターゲットを絞ったWeb広告推奨。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cross Analysis Table -->
+            <section class="card overflow-hidden p-0">
+                <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                        <i data-lucide="git-compare" class="w-4 h-4 text-gray-500"></i> 親和性分析 (この客層は、次これを見る)
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full rank-table">
+                        <thead>
+                            <tr>
+                                <th class="text-left pl-10 min-w-[160px]">現在の鑑賞作品 (Source)</th>
+                                <th class="text-left min-w-[160px]">最も刺さった予告編 (Target)</th>
+                                <th class="w-24 whitespace-nowrap">反応率</th>
+                                <th class="w-24 whitespace-nowrap">シナジー判定</th>
+                                <th class="text-left min-w-[200px]">推奨アクション</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr>
+                                <td class="text-left pl-10 font-bold text-gray-800">ギャラクシー・ウォーズ</td>
+                                <td class="text-left text-indigo-700 font-bold">スペース・アドベンチャー</td>
+                                <td><span class="score-badge bg-score-high">28.5%</span></td>
+                                <td><span class="badge badge-teal">High</span></td>
+                                <td class="text-left text-xs text-gray-600">本編前に固定編成 / 相互割引</td>
+                            </tr>
+                            <tr>
+                                <td class="text-left pl-10 font-bold text-gray-800">ラブ・イン・トーキョー</td>
+                                <td class="text-left text-pink-600 font-bold">春の恋人たち</td>
+                                <td><span class="score-badge bg-score-high">31.2%</span></td>
+                                <td><span class="badge badge-teal">High</span></td>
+                                <td class="text-left text-xs text-gray-600">ムビチケ販売強化 / デート訴求</td>
+                            </tr>
+                            <tr>
+                                <td class="text-left pl-10 font-bold text-gray-800">名探偵の休日</td>
+                                <td class="text-left text-orange-600 font-bold">ミステリー・トレイン</td>
+                                <td><span class="score-badge bg-score-mid">18.4%</span></td>
+                                <td><span class="badge badge-indigo">Mid</span></td>
+                                <td class="text-left text-xs text-gray-600">チラシ配布 / ファミリー訴求</td>
+                            </tr>
+                            <tr>
+                                <td class="text-left pl-10 font-bold text-gray-800">青空の向こう側</td>
+                                <td class="text-left text-gray-600 font-medium">激走！カーチェイス</td>
+                                <td><span class="score-badge bg-score-low">5.2%</span></td>
+                                <td><span class="badge badge-score-low">Low</span></td>
+                                <td class="text-left text-xs text-gray-600">予告編差し替え検討</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+        Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
+        Chart.defaults.color = '#6b7280';
+
+        // --- Tab Switching Logic ---
+        function switchTab(tabId) {
+            // Hide Contents
+            document.getElementById('content-now').classList.add('hidden');
+            document.getElementById('content-future').classList.add('hidden');
+
+            // Reset Tabs
+            document.getElementById('tab-now').classList.remove('active', 'active-teal');
+            document.getElementById('tab-future').classList.remove('active', 'active-teal');
+
+            // Activate
+            document.getElementById('content-' + tabId).classList.remove('hidden');
+
+            const activeClass = (tabId === 'now') ? 'active' : 'active-teal';
+            document.getElementById('tab-' + tabId).classList.add(activeClass);
+        }
+
+        // --- Data: Now Playing ---
+        const nowMovies = {
+            'Sky': { label: '青空の向こう側', color: '#ef4444', nps: 88.2, light: 9, special: 15, food: 20 },
+            'Forest': { label: '森の精霊たち', color: '#10b981', nps: 85.5, light: 15, special: 5, food: 18 },
+            'Musical': { label: 'ミュージカル・スター', color: '#ec4899', nps: 75.0, light: 20, special: 15, food: 15 },
+            'Galaxy': { label: 'ギャラクシー', color: '#9333ea', nps: 72.4, light: 34, special: 28, food: 52 },
+            'Earth': { label: '地球の記録', color: '#f59e0b', nps: 70.0, light: 5, special: 0, food: 10 }
+        };
+
+        // --- Chart 1: Now Playing Scatter ---
+        const ctxNow = document.getElementById('nowPlayingScatter').getContext('2d');
+        let nowChart = new Chart(ctxNow, {
+            type: 'scatter',
+            data: {
+                datasets: Object.values(nowMovies).map(m => ({
+                    label: m.label,
+                    data: [{x: m.nps, y: m.light, r: m.special}],
+                    backgroundColor: m.color + '99',
+                    borderColor: m.color,
+                    borderWidth: 1
+                }))
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: false }, min: 30, max: 100, grid: { borderDash: [2, 2] } },
+                    y: { title: { display: false }, min: 0, max: 60, grid: { borderDash: [2, 2] } }
+                },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+
+        function updateNowChart(mode) {
+            // Button styles
+            document.getElementById('btn-now-potential').classList.remove('active');
+            document.getElementById('btn-now-revenue').classList.remove('active');
+            document.getElementById('btn-now-' + mode).classList.add('active');
+
+            const explanationEl = document.getElementById('map-explanation');
+
+            // Update Data & Explanations
+            nowChart.data.datasets.forEach((d, i) => {
+                const m = Object.values(nowMovies)[i];
+                if(mode === 'potential') {
+                    // Larger Bubbles: Base 20
+                    d.data[0] = { x: m.nps, y: m.light, r: Math.max(20, m.special * 1.5) };
+                    document.getElementById('now-axis-x').innerText = '横軸: 推奨熱量 (NPS)';
+                    document.getElementById('now-axis-y').innerText = '縦軸: ライト層流入率';
+                    nowChart.options.scales.x.min = 30; nowChart.options.scales.x.max = 100;
+                    nowChart.options.scales.y.min = 0; nowChart.options.scales.y.max = 60;
+
+                    // Explanation text for Potential
+                    explanationEl.innerHTML = `
+                        <div class="flex items-center gap-2 mb-2 font-bold text-indigo-700">
+                            <i data-lucide="info" class="w-4 h-4"></i> 動員力マップの見方 (円の大きさ＝特殊形式意向)
+                        </div>
+                        <ul class="space-y-1 list-disc list-inside">
+                            <li><strong class="text-gray-900">右上 (大ヒット)</strong>：口コミと大衆性を両立。席数拡大。</li>
+                            <li><strong class="text-gray-900">右下 (熱狂)</strong>：コアファンが高評価。ロングラン向け。</li>
+                            <li><strong class="text-gray-900">左上 (話題先行)</strong>：人は入るが評価は賛否両論。短期決戦。</li>
+                        </ul>
+                    `;
+                } else {
+                    // Larger Bubbles
+                    d.data[0] = { x: m.food, y: m.special, r: Math.max(20, m.nps/2) };
+                    document.getElementById('now-axis-x').innerText = '横軸: 飲食購入率';
+                    document.getElementById('now-axis-y').innerText = '縦軸: 特殊形式意向';
+                    nowChart.options.scales.x.min = 0; nowChart.options.scales.x.max = 70;
+                    nowChart.options.scales.y.min = 0; nowChart.options.scales.y.max = 40;
+
+                    // Explanation text for Revenue
+                    explanationEl.innerHTML = `
+                        <div class="flex items-center gap-2 mb-2 font-bold text-indigo-700">
+                            <i data-lucide="info" class="w-4 h-4"></i> 収益力マップの見方 (円の大きさ＝NPS)
+                        </div>
+                        <ul class="space-y-1 list-disc list-inside">
+                            <li><strong class="text-gray-900">右上 (ドル箱)</strong>：客単価・利益率が最大。最優先編成。</li>
+                            <li><strong class="text-gray-900">左下 (薄利)</strong>：単価が低い。回転率（回数）で勝負。</li>
+                        </ul>
+                    `;
+                }
+            });
+            nowChart.update();
+            lucide.createIcons(); // Refresh icons in description
+        }
+
+        // --- NEW: Sensitivity Trend Chart ---
+        new Chart(document.getElementById('sensitivityTrendChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['6月', '7月', '8月', '9月', '10月', '11月'],
+                datasets: [{
+                    label: '予告編感度 (全体)',
+                    data: [30, 32, 35, 33, 34, 35.2],
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: false, min: 20, max: 50, grid: { borderDash: [2, 2] } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // --- NEW: Trailer Sensitivity Charts ---
+        // 1. Gender/Age
+        new Chart(document.getElementById('sensitivityDemoChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['男性20-30', '女性20-30', '男性40-50', '女性40-50', '10代'],
+                datasets: [{
+                    label: '予告編影響度',
+                    data: [45, 30, 25, 20, 55],
+                    backgroundColor: ['#2563eb', '#db2777', '#60a5fa', '#f472b6', '#fbbf24'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 60, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Frequency
+        new Chart(document.getElementById('sensitivityFreqChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['ヘビー (月1+)', 'ミドル (数ヶ月)', 'ライト (年1)'],
+                datasets: [{
+                    label: '予告編影響度',
+                    data: [60, 40, 15],
+                    backgroundColor: ['#4f46e5', '#818cf8', '#c7d2fe'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, max: 70, grid: { display: false } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+
+        // --- Chart 2: Trailer Ranking (Bar) ---
+        const ctxTrailerRank = document.getElementById('trailerRankingChart').getContext('2d');
+        new Chart(ctxTrailerRank, {
+            type: 'bar',
+            data: {
+                labels: ['スペース・アドベンチャー', '春の恋人たち', 'ミステリー・トレイン', '激走！カーチェイス', 'アニマル・ワールド'],
+                datasets: [{
+                    label: '観たい率 (%)',
+                    data: [28.5, 20.1, 15.4, 12.0, 8.5],
+                    backgroundColor: ['#4f46e5', '#ec4899', '#f59e0b', '#ef4444', '#10b981'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { borderDash: [2, 2] } }, y: { grid: { display: false } } }
+            }
+        });
+
+        // --- Chart 3: Trailer Positioning (Scatter) ---
+        const ctxTrailerPos = document.getElementById('trailerPositionChart').getContext('2d');
+        new Chart(ctxTrailerPos, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'スペース・アドベンチャー', data: [{x: 30, y: 80, r: 20}], backgroundColor: '#4f46e5' }, // Young, Mass
+                    { label: '春の恋人たち', data: [{x: 25, y: 60, r: 15}], backgroundColor: '#ec4899' }, // Young, Mid
+                    { label: 'ミステリー・トレイン', data: [{x: 50, y: 50, r: 12}], backgroundColor: '#f59e0b' }, // Middle, Mid
+                    { label: '激走！カーチェイス', data: [{x: 40, y: 30, r: 10}], backgroundColor: '#ef4444' }, // Middle, Niche
+                    { label: 'アニマル・ワールド', data: [{x: 10, y: 40, r: 8}], backgroundColor: '#10b981' }  // Kids, Mid
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'ターゲット年齢 (10代 ⇔ 60代)' }, min: 0, max: 70, grid: { borderDash: [2, 2] } },
+                    y: { title: { display: true, text: '関心度 (Niche ⇔ Mass)' }, min: 0, max: 100, grid: { borderDash: [2, 2] } }
+                },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        // --- Data & Sorting Logic ---
+        // Data strictly ordered by NPS Descending. Rank = NPS Rank.
+        let displayedMovies = [
+            { rank: 1, title: '青空の向こう側', nps: 88.2, light: 9, special: 15, food: 20, group: 40, ai: '熱狂', badge: 'bg-score-high', aiBadge: 'bg-red-100 text-red-800' },
+            { rank: 2, title: '森の精霊たち', nps: 85.5, light: 15, special: 5, food: 18, group: 35, ai: '評価安定', badge: 'bg-score-high', aiBadge: 'bg-green-100 text-green-800' },
+            { rank: 3, title: 'ミュージカル・スター', nps: 75.0, light: 20, special: 15, food: 15, group: 50, ai: '音楽ファン', badge: 'bg-score-high', aiBadge: 'bg-pink-50 text-pink-700' },
+            { rank: 4, title: 'ギャラクシー・ウォーズ', nps: 72.4, light: 34, special: 28, food: 52, group: 60, ai: '収益柱', badge: 'bg-score-high', aiBadge: 'badge-indigo' },
+            { rank: 5, title: '地球の記録', nps: 70.0, light: 5, special: 0, food: 10, group: 10, ai: 'コア層', badge: 'bg-score-high', aiBadge: 'bg-red-100 text-red-800' }
+        ];
+
+        const moreMoviesData = [
+            { rank: 6, title: '愛と追憶のパリ', nps: 68.5, light: 12, special: 2, food: 25, group: 30, ai: 'ロング', badge: 'bg-score-high', aiBadge: 'bg-green-100 text-green-800' },
+            { rank: 7, title: 'フロンティア2050', nps: 68.0, light: 15, special: 22, food: 40, group: 35, ai: 'SF固定', badge: 'bg-score-mid', aiBadge: 'bg-purple-50 text-purple-700' },
+            { rank: 8, title: '戦国の覇者', nps: 65.0, light: 10, special: 5, food: 20, group: 20, ai: 'シニア層', badge: 'bg-score-mid', aiBadge: 'bg-gray-100 text-gray-800' },
+            { rank: 9, title: '激走！カーチェイス', nps: 62.0, light: 20, special: 25, food: 40, group: 45, ai: 'アクション', badge: 'bg-score-mid', aiBadge: 'bg-gray-100 text-gray-800' },
+            { rank: 10, title: 'ゾンビ・パニック', nps: 60.0, light: 25, special: 10, food: 48, group: 55, ai: '若年層', badge: 'bg-score-mid', aiBadge: 'bg-gray-100 text-gray-800' },
+            { rank: 11, title: 'わんぱく冒険団', nps: 60.0, light: 45, special: 0, food: 25, group: 65, ai: 'ファミリー', badge: 'bg-score-mid', aiBadge: 'bg-blue-50 text-blue-700' },
+            { rank: 12, title: '名探偵の休日', nps: 58.0, light: 43, special: 5, food: 45, group: 70, ai: 'マス型', badge: 'bg-score-mid', aiBadge: 'bg-blue-100 text-blue-800' },
+            { rank: 13, title: '爆笑キングダム', nps: 55.0, light: 50, special: 0, food: 35, group: 80, ai: 'グループ', badge: 'bg-score-mid', aiBadge: 'bg-blue-100 text-blue-800' },
+            { rank: 14, title: '雨の日の恋', nps: 52.0, light: 30, special: 0, food: 30, group: 75, ai: 'デート圏外', badge: 'bg-score-low', aiBadge: 'bg-gray-100 text-gray-500' },
+            { rank: 15, title: 'ラブ・イン・トーキョー', nps: 42.0, light: 25, special: 2, food: 38, group: 78, ai: 'デート', badge: 'bg-score-low', aiBadge: 'bg-gray-100 text-gray-800' }
+        ];
+
+        // Default: Sort by NPS Descending
+        let sortConfig = { key: 'nps', direction: 'desc' };
+        let hasLoadedMore = false;
+
+        function getScoreColor(val) {
+            if (val >= 70) return 'bg-score-high';
+            if (val >= 50) return 'bg-score-mid';
+            return 'bg-score-low';
+        }
+
+        // Logic to apply sort based on current sortConfig
+        function applySort() {
+            const key = sortConfig.key;
+            const dir = sortConfig.direction;
+
+            displayedMovies.sort((a, b) => {
+                let valA = a[key];
+                let valB = b[key];
+
+                if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                }
+
+                if (valA < valB) return dir === 'asc' ? -1 : 1;
+                if (valA > valB) return dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('ranking-table-body');
+            tbody.innerHTML = '';
+
+            displayedMovies.forEach(m => {
+                const npsBadge = getScoreColor(m.nps);
+                const row = document.createElement('tr');
+                row.className = 'fade-in hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="font-bold">${m.rank}</td>
+                    <td class="text-left font-bold text-gray-900">${m.title}</td>
+                    <td><span class="score-badge ${npsBadge}">${m.nps.toFixed(1)}</span></td>
+                    <td><span class="score-badge ${getScoreColor(m.light)}">${m.light}%</span></td>
+                    <td><span class="score-badge ${getScoreColor(m.special)}">${m.special}%</span></td>
+                    <td><span class="score-badge ${getScoreColor(m.food)}">${m.food}%</span></td>
+                    <td><span class="score-badge ${getScoreColor(m.group)}">${m.group}%</span></td>
+                    <td><span class="badge ${m.aiBadge}">${m.ai}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updateSortIcons();
+        }
+
+        function sortMovies(key) {
+            if (sortConfig.key === key) {
+                sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortConfig.key = key;
+                sortConfig.direction = (key === 'rank' || key === 'title') ? 'asc' : 'desc';
+            }
+            applySort();
+        }
+
+        function updateSortIcons() {
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.setAttribute('data-lucide', 'arrow-up-down');
+                icon.style.color = '#9ca3af';
+            });
+
+            const activeIcon = document.getElementById(`icon-${sortConfig.key}`);
+            if (activeIcon) {
+                activeIcon.setAttribute('data-lucide', sortConfig.direction === 'asc' ? 'arrow-up' : 'arrow-down');
+                activeIcon.style.color = '#4f46e5';
+            }
+            lucide.createIcons();
+        }
+
+        function loadMoreMovies() {
+            if (!hasLoadedMore) {
+                displayedMovies = [...displayedMovies, ...moreMoviesData.slice(0, 5)];
+                hasLoadedMore = true;
+                const btn = document.getElementById('btn-load-more');
+                btn.innerHTML = `<span>もっと見る (残り5件)</span><i data-lucide="chevron-down" class="w-4 h-4"></i>`;
+                lucide.createIcons();
+            } else {
+                displayedMovies = [...displayedMovies, ...moreMoviesData.slice(5)];
+                document.getElementById('btn-load-more').style.display = 'none';
+            }
+            applySort(); // Re-apply sort after loading new data
+        }
+
+        // Initialize with default sort applied
+        document.addEventListener('DOMContentLoaded', () => {
+            updateNowChart('potential'); // Initialize chart explainer
+            applySort(); // Apply default sort
+        });
+
+    </script>
+</body>
+</html>
