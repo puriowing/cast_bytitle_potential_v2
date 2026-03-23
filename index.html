@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAST - 作品ポテンシャル分析ダッシュボード v5</title>
+    <title>CAST - 作品別宣伝分析ダッシュボード (Compact Nav)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -14,57 +14,169 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Design Tokens - Professional & Solid */
+        /* Design Tokens - Professional & Solid (cast_bytheater_v3 に合わせる) */
         :root {
-            --bg-body: #f1f5f9;   /* Slate 100 */
+            --bg-body: #f1f5f9;
             --bg-card: #ffffff;
-            --text-main: #334155; /* Slate 700 */
-            --text-dark: #0f172a; /* Slate 900 */
-            --border: #cbd5e1;    /* Slate 300 */
-            --header-bg: #1e293b; /* Slate 800 */
-            --accent: #4338ca;    /* Indigo 700 */
+            --text-main: #334155;
+            --text-dark: #0f172a;
+            --border: #cbd5e1;
+            --header-bg: #1e293b;
+            --accent: #4338ca;
+            --accent-light: #e0e7ff;
+            --accent-hover: #4f46e5;
         }
 
+        html {
+            overflow-y: scroll;
+            overflow-x: hidden;
+            height: auto;
+        }
         body {
             font-family: 'Noto Sans JP', sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
-            padding-top: 120px;
+            padding-top: 120px; /* cast_bytheater_v3 に合わせる */
+            overflow-x: hidden;
+            height: auto;
+            min-height: 100vh;
         }
 
-        .num-font {
-            font-family: 'Manrope', sans-serif;
-            font-feature-settings: "tnum";
-            letter-spacing: -0.02em;
-        }
+        .num-font { font-family: 'Manrope', sans-serif; font-feature-settings: "tnum"; letter-spacing: -0.02em; }
 
-        /* Header */
+        /* Header & Nav */
         .header-fixed {
             position: fixed;
-            top: 0; left: 0; right: 0; z-index: 50;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
             background-color: var(--header-bg);
             color: white;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* Sub Nav */
+        /* Sub Nav (Timeline) */
         .sub-nav {
             background-color: #ffffff;
             border-bottom: 1px solid var(--border);
+            position: relative;
+            height: 50px;
+            display: flex;
+            align-items: center;
         }
-        .nav-item {
-            color: #64748b;
-            font-weight: 600;
-            font-size: 0.875rem;
-            padding: 0.75rem 1rem;
-            border-bottom: 3px solid transparent;
-            transition: all 0.1s;
-            cursor: pointer;
-        }
-        .nav-item:hover { color: var(--text-dark); background-color: #f8fafc; }
-        .nav-item.active { color: var(--text-dark); border-bottom-color: var(--accent); }
 
-        /* Solid Card */
+        /* Fade effects for scrolling hint */
+        .sub-nav::before, .sub-nav::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 30px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .sub-nav::before {
+            left: 0;
+            background: linear-gradient(to right, #ffffff, transparent);
+        }
+        .sub-nav::after {
+            right: 0;
+            background: linear-gradient(to left, #ffffff, transparent);
+        }
+
+        .timeline-wrapper {
+            width: 100%;
+            overflow: hidden;
+            padding: 0 1rem;
+        }
+
+        .timeline-nav {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 4px 4px; /* Reduced padding */
+            gap: 6px; /* Reduced gap */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            scroll-behavior: smooth;
+            align-items: center;
+        }
+        .timeline-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            min-width: 3rem;
+            height: 2rem;
+            border-radius: 4px;
+            background-color: #ffffff;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+            user-select: none;
+        }
+        .nav-item:hover {
+            background-color: #f8fafc;
+            color: var(--text-dark);
+        }
+        .nav-item.active {
+            background-color: var(--accent-light);
+            color: var(--accent);
+            border-color: #c7d2fe;
+            font-weight: bold;
+        }
+        .nav-item[data-week="0"] { min-width: 4rem; }
+        .nav-item.active[data-week="0"] {
+            background-color: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+        }
+
+        /* Text Styles */
+        .nav-item-main {
+            font-family: 'Manrope', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .phase-divider {
+            width: 1px;
+            height: 18px;
+            background-color: var(--border);
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
+
+
+        /* Main content */
+        main {
+            overflow-anchor: auto;
+            position: relative;
+        }
+
+        /* Containers */
+        .section-container { background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .grid { align-items: start; }
+        .section-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .section-title { font-size: 1.25rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 0.5rem; }
+        .section-desc { font-size: 0.875rem; color: #64748b; margin-left: 2.5rem; margin-bottom: 1.5rem; border-left: 2px solid var(--border); padding-left: 1rem; }
+
+        /* Analysis Group & Cards (v3 テイスト) */
+        .analysis-group {
+            margin-bottom: 2.5rem;
+            overflow: visible;
+        }
+
         .solid-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border);
@@ -72,8 +184,8 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            height: 100%;
         }
+
         .card-header {
             background-color: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
@@ -87,57 +199,106 @@
             align-items: center;
             justify-content: space-between;
             min-height: 40px;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
-        .card-body { padding: 1rem; flex-grow: 1; }
+        .card-header-desc {
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: #64748b;
+            text-transform: none;
+            letter-spacing: 0;
+            margin-top: 0.2rem;
+            margin-bottom: 0;
+        }
 
-        /* Toggle Button */
-        .view-toggle {
-            display: inline-flex; align-items: center;
-            background-color: #fff; border: 1px solid #cbd5e1;
-            border-radius: 4px; padding: 2px; cursor: pointer;
+        .card-body {
+            padding: 1rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
-        .view-toggle-btn {
-            padding: 2px 8px; font-size: 10px; border-radius: 2px;
-            color: #64748b; transition: all 0.2s;
-        }
-        .view-toggle-btn.active { background-color: #4338ca; color: white; font-weight: bold; }
 
-        /* Table */
-        .data-table th, .cs-table th {
-            background-color: #f1f5f9; color: #475569; font-weight: 700;
-            font-size: 0.75rem; padding: 0.5rem 0.75rem;
-            border-bottom: 2px solid #cbd5e1; text-align: left;
-        }
-        .data-table td, .cs-table td {
-            padding: 0.5rem 0.75rem; font-size: 0.875rem;
-            border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle;
-        }
-        .data-table tr:hover, .cs-table tr:hover { background-color: #f1f5f9; }
+        /* Metric Styles */
+        .metric-value { font-family: 'Manrope', sans-serif; font-size: 2.25rem; font-weight: 800; line-height: 1; color: #0f172a; letter-spacing: -0.03em; }
 
-        /* Utilities */
-        .hidden { display: none !important; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        .rank-badge {
+            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 0.75rem;
+            padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;
+            background-color: #ffffff; border: 1px solid var(--border); color: #64748b;
+        }
+
+        .kpi-diff-pill {
+            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 0.75rem;
+            padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;
+        }
+        .diff-pos { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .diff-neg { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .diff-neu { background-color: #f1f5f9; color: #64748b; border: 1px solid var(--border); }
+
+        /* Insight / Action Box (v3 テイスト) */
+        .insight-action-box {
+            margin-top: 1.5rem;
+            padding: 1rem 1.25rem;
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 768px) {
+            .insight-action-box { grid-template-columns: 1fr 1fr; }
+        }
+        .ia-header { font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .ia-text { font-size: 0.8125rem; color: #475569; line-height: 1.6; }
+
+        /* Correlation Box Style */
+        .correlation-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .cb-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+        .cb-content h4 { font-weight: 800; font-size: 0.9rem; margin-bottom: 0.25rem; }
+        .cb-content p { font-size: 0.8rem; line-height: 1.5; opacity: 0.9; }
+
+        /* Section Icon (v3 テイスト) */
+        .icon-box { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 4px; font-size: 1.125rem; margin-right: 0.75rem; }
+
+        /* Toggle Buttons */
+        .trend-toggle-btn { padding: 2px 8px; font-size: 10px; border-radius: 2px; color: #64748b; cursor: pointer; transition: all 0.2s; }
+        .trend-toggle-btn.active { background-color: #4338ca; color: white; font-weight: bold; }
+        .trend-tab-button { padding: 4px 12px; font-size: 0.75rem; font-weight: bold; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+        .trend-tab-button.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .chart-tab-btn { transition: all 0.2s; }
+        .chart-tab-btn.active { background-color: white; color: #4338ca; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+
+        /* Metrics */
+        .chart-container { position: relative; width: 100%; min-height: 200px; flex-grow: 1; }
+        .sparkline-container { height: 50px; width: 100%; margin-top: auto; }
+
+        /* Utility (v3 に合わせる) */
+        section { scroll-margin-top: 130px; }
+        .summary-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animate: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Badge Styles */
-        .status-badge {
-            display: inline-flex; align-items: center; padding: 0.125rem 0.5rem;
-            border-radius: 4px; font-size: 0.7rem; font-weight: 700; border: 1px solid transparent;
-        }
-        .status-badge.high { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
-        .status-badge.mid { background-color: #fef9c3; color: #854d0e; border-color: #fde047; }
-        .status-badge.low { background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
-
-        .rank-sq {
-            display: inline-flex; width: 20px; height: 20px;
-            align-items: center; justify-content: center;
-            color: white; font-size: 0.7rem; font-weight: 700;
-            border-radius: 2px; background-color: #64748b;
-        }
-        .rank-1 { background-color: #eab308; }
-        .rank-2 { background-color: #94a3b8; }
-        .rank-3 { background-color: #b45309; }
-
+        /* Comments & Keywords */
+        .keyword-tag { display: inline-block; background-color: #eef2ff; color: #4338ca; font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 999px; margin: 2px; border: 1px solid #c7d2fe; transition: all 0.1s; }
+        .keyword-tag:hover { background-color: #e0e7ff; transform: scale(1.05); cursor: default; }
+        .comment-card { background-color: #ffffff; padding: 1rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 0.75rem; }
     </style>
 </head>
 <body>
@@ -147,596 +308,790 @@
         <header class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <div class="flex items-center space-x-2">
-                    <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-400"></i>
-                    <span class="text-lg font-bold tracking-tight text-white">CAST <span class="text-slate-400 font-normal">Dashboard</span></span>
+                    <i data-lucide="film" class="w-5 h-5 text-indigo-400"></i>
+                    <span class="text-lg font-bold tracking-tight text-white">CAST</span>
+                    <span class="hidden md:inline text-xs font-medium text-slate-400">作品分析</span>
                 </div>
                 <div class="hidden md:block h-5 w-px bg-slate-600"></div>
-                <h1 class="hidden md:block text-xs font-medium text-slate-300">作品ポテンシャル分析</h1>
-            </div>
-            <div class="flex items-center space-x-2">
+
+                <!-- Target Selector -->
                 <div class="flex items-center bg-slate-700 rounded px-2 py-1 border border-slate-600">
-                    <i data-lucide="calendar" class="w-3 h-3 text-slate-400 mr-2"></i>
-                    <span class="text-xs text-white font-bold">2025.12.01 更新</span>
+                    <span class="text-[10px] text-slate-400 font-bold mr-2 uppercase">Target</span>
+                    <select id="movieSelector" class="bg-transparent text-xs text-white focus:outline-none font-bold cursor-pointer w-48" onchange="updateDashboard()">
+                        <option value="movie1">機動戦士ギャラクシー -最終章-</option>
+                        <option value="movie2">恋する喫茶店と雨の日</option>
+                        <option value="movie3">MISSION: BREAKOUT</option>
+                    </select>
                 </div>
-                <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-bold transition-colors border border-indigo-500">CSV出力</button>
+
+                <!-- Compare Selector -->
+                <div class="flex items-center bg-slate-700 rounded px-2 py-1 border border-slate-600">
+                    <span class="text-[10px] text-slate-400 font-bold mr-2 uppercase">VS</span>
+                    <select id="compareSelector" class="bg-transparent text-xs text-white focus:outline-none font-bold cursor-pointer w-32" onchange="updateDashboard()">
+                        <option value="avg">業界平均</option>
+                        <option value="movie1">機動戦士ギャラクシー</option>
+                        <option value="movie2">恋する喫茶店</option>
+                        <option value="movie3">MISSION: BREAKOUT</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="text-right hidden sm:block mr-2">
+                    <div class="text-[10px] text-slate-400">回答数 (N)</div>
+                    <div class="text-sm font-bold text-white num-font" id="header_n_count">--</div>
+                </div>
             </div>
         </header>
 
         <div class="sub-nav">
-            <div class="max-w-7xl mx-auto px-4">
-                <nav class="flex overflow-x-auto">
-                    <div id="nav-now" onclick="switchTab('now')" class="nav-item active flex items-center whitespace-nowrap">
-                        <i data-lucide="film" class="w-4 h-4 mr-2"></i>上映中作品 (Now Playing)
-                    </div>
-                    <div id="nav-future" onclick="switchTab('future')" class="nav-item flex items-center whitespace-nowrap">
-                        <i data-lucide="clapperboard" class="w-4 h-4 mr-2"></i>予告編・次回作 (Future)
-                    </div>
+            <div class="max-w-7xl mx-auto timeline-wrapper">
+                <nav class="timeline-nav" id="timeline-container">
+                    <!-- Javascript will populate this -->
                 </nav>
             </div>
         </div>
     </div>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <!-- Removed 'space-y-8' to prevent margin offset on the second tab -->
+    <main class="max-w-7xl mx-auto px-4 pt-4 pb-8">
 
-        <!-- ========================================== -->
-        <!-- TAB 1: NOW PLAYING -->
-        <!-- ========================================== -->
-        <div id="content-now" class="fade-in space-y-6">
-
-            <!-- Summary Header -->
-            <div class="flex items-center justify-between mb-2 border-b border-slate-300 pb-2">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center">
-                    <i data-lucide="activity" class="w-5 h-5 mr-2 text-slate-500"></i>上映中作品ポテンシャル分析
-                </h2>
-                <div class="flex gap-2">
-                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">作品満足度調査</span>
-                    <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">n=15,300</span>
-                </div>
-            </div>
-
-            <!-- KPI Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Long Run -->
-                <div class="solid-card border-t-4 border-t-emerald-500">
-                    <div class="card-header bg-white border-b-0 pb-0">
-                        <span class="text-emerald-700"><i data-lucide="trending-up" class="w-3 h-3 inline mr-1"></i>ロングラン指数 No.1</span>
-                    </div>
-                    <div class="card-body pt-1">
-                        <h3 class="font-bold text-slate-800 truncate mb-2">愛と追憶のパリ</h3>
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-3xl font-bold text-slate-800 num-font">92</span>
-                            <span class="text-xs text-slate-500 font-bold">pt</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Light User -->
-                <div class="solid-card border-t-4 border-t-blue-500">
-                    <div class="card-header bg-white border-b-0 pb-0">
-                        <span class="text-blue-700"><i data-lucide="users" class="w-3 h-3 inline mr-1"></i>ライト層流入率 No.1</span>
-                    </div>
-                    <div class="card-body pt-1">
-                        <h3 class="font-bold text-slate-800 truncate mb-2">名探偵の休日</h3>
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-3xl font-bold text-slate-800 num-font">42.5</span>
-                            <span class="text-xs text-slate-500 font-bold">%</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Concession -->
-                <div class="solid-card border-t-4 border-t-orange-500">
-                    <div class="card-header bg-white border-b-0 pb-0">
-                        <span class="text-orange-700"><i data-lucide="popcorn" class="w-3 h-3 inline mr-1"></i>飲食購入率 No.1</span>
-                    </div>
-                    <div class="card-body pt-1">
-                        <h3 class="font-bold text-slate-800 truncate mb-2">ギャラクシー・ウォーズ</h3>
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-3xl font-bold text-slate-800 num-font">52.0</span>
-                            <span class="text-xs text-slate-500 font-bold">%</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- NPS -->
-                <div class="solid-card border-t-4 border-t-rose-500">
-                    <div class="card-header bg-white border-b-0 pb-0">
-                        <span class="text-rose-700"><i data-lucide="flame" class="w-3 h-3 inline mr-1"></i>推奨熱量 (NPS) No.1</span>
-                    </div>
-                    <div class="card-body pt-1">
-                        <h3 class="font-bold text-slate-800 truncate mb-2">青空の向こう側</h3>
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-3xl font-bold text-slate-800 num-font">88.2</span>
-                            <span class="text-xs text-slate-500 font-bold">pt</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Charts Row -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Potential Map (2 cols) -->
-                <div class="solid-card lg:col-span-2">
-                    <div class="card-header">
-                        <span><i data-lucide="crosshair" class="w-3 h-3 inline mr-1"></i>ポテンシャル・マップ</span>
-                        <div class="view-toggle">
-                            <span onclick="updateNowChart('potential')" id="btn-now-potential" class="view-toggle-btn active">動員力</span>
-                            <span onclick="updateNowChart('revenue')" id="btn-now-revenue" class="view-toggle-btn">収益力</span>
-                        </div>
-                    </div>
-                    <div class="card-body relative">
-                        <div class="h-80 w-full relative">
-                            <canvas id="nowPlayingScatter"></canvas>
-                        </div>
-                        <div class="mt-4 p-3 bg-slate-50 rounded border border-slate-200 text-xs text-slate-600" id="map-explanation">
-                            <!-- JS injected content -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Strategic Actions (1 col) -->
-                <div class="solid-card">
-                    <div class="card-header">
-                        <span><i data-lucide="lightbulb" class="w-3 h-3 inline mr-1"></i>戦略アクション</span>
-                    </div>
-                    <div class="card-body space-y-4">
-                        <div class="p-3 bg-rose-50 border border-rose-100 rounded">
-                            <div class="text-[10px] font-bold text-rose-600 uppercase mb-1">カルトヒット育成</div>
-                            <div class="font-bold text-sm text-slate-800 mb-1">青空の向こう側</div>
-                            <p class="text-xs text-slate-600 leading-relaxed">NPS88.2と圧倒的。現在はコア層中心だが、口コミ拡散でマス層へ広がる予兆あり。SNSキャンペーンを強化。</p>
-                        </div>
-                        <div class="p-3 bg-orange-50 border border-orange-100 rounded">
-                            <div class="text-[10px] font-bold text-orange-600 uppercase mb-1">収益最大化</div>
-                            <div class="font-bold text-sm text-slate-800 mb-1">ギャラクシー・ウォーズ</div>
-                            <p class="text-xs text-slate-600 leading-relaxed">飲食率52%・特殊形式希望28%。回転率よりも「単価」重視。IMAX枠の維持とセット販売推奨。</p>
-                        </div>
-                        <div class="p-3 bg-emerald-50 border border-emerald-100 rounded">
-                            <div class="text-[10px] font-bold text-emerald-600 uppercase mb-1">ロングラン安定</div>
-                            <div class="font-bold text-sm text-slate-800 mb-1">森の精霊たち</div>
-                            <p class="text-xs text-slate-600 leading-relaxed">NPS85.5で評価が非常に安定。平日シニア層の稼働が高い。中箱・小箱での長期上映に最適。</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Data Table -->
-            <div class="solid-card">
-                <div class="card-header">
-                    <span>全作品指標一覧</span>
-                    <button class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline">詳細CSVダウンロード</button>
-                </div>
-                <div class="card-body p-0 overflow-x-auto">
-                    <table class="w-full data-table" id="integrated-table">
-                        <thead>
-                            <tr>
-                                <th class="w-12 cursor-pointer hover:bg-slate-200" onclick="sortMovies('rank')">順位 <i data-lucide="arrow-up-down" class="sort-icon" id="icon-rank"></i></th>
-                                <th class="cursor-pointer hover:bg-slate-200" onclick="sortMovies('title')">作品名 <i data-lucide="arrow-up-down" class="sort-icon" id="icon-title"></i></th>
-                                <th class="cursor-pointer hover:bg-slate-200 text-center" onclick="sortMovies('nps')">NPS <i data-lucide="arrow-up-down" class="sort-icon" id="icon-nps"></i></th>
-                                <th class="cursor-pointer hover:bg-slate-200 text-center" onclick="sortMovies('light')">ライト層 <i data-lucide="arrow-up-down" class="sort-icon" id="icon-light"></i></th>
-                                <th class="cursor-pointer hover:bg-slate-200 text-center" onclick="sortMovies('special')">特殊形式 <i data-lucide="arrow-up-down" class="sort-icon" id="icon-special"></i></th>
-                                <th class="cursor-pointer hover:bg-slate-200 text-center" onclick="sortMovies('food')">飲食率 <i data-lucide="arrow-up-down" class="sort-icon" id="icon-food"></i></th>
-                                <th class="w-24 text-center">AI判定</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ranking-table-body">
-                            <!-- JS Generated -->
-                        </tbody>
-                    </table>
-                    <div class="text-center py-3 border-t border-slate-200 bg-slate-50">
-                        <button id="btn-load-more" onclick="loadMoreMovies()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center justify-center gap-1 w-full">
-                            もっと見る (残り5件) <i data-lucide="chevron-down" class="w-3 h-3"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
+        <!-- TAB 1: PRE-RELEASE -->
+        <div id="tab-pre-release" class="tab-content active">
+            <div id="pre-release-container"></div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- TAB 2: FUTURE (TRAILERS) -->
-        <!-- ========================================== -->
-        <div id="content-future" class="hidden fade-in space-y-6">
+        <!-- TAB 2: POST-RELEASE -->
+        <div id="tab-post-release" class="tab-content">
 
-            <!-- Summary Section -->
-            <div class="flex items-center justify-between mb-2 border-b border-slate-300 pb-2">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center">
-                    <i data-lucide="radar" class="w-5 h-5 mr-2 text-slate-500"></i>次回ヒット作予報
-                </h2>
-                <div class="flex gap-2">
-                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">Q17 予告編調査</span>
-                    <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">n=2,450</span>
-                </div>
-            </div>
-
-            <!-- Sensitivity Analysis -->
-            <div class="solid-card">
-                <div class="card-header">
-                    <span>予告編感度 (Audience Sensitivity)</span>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-xs text-slate-500 font-normal">平均スコア</span>
-                        <span class="text-xl font-bold text-indigo-700 num-font">35.2<span class="text-sm ml-0.5">%</span></span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Trend (Full Width) -->
-                        <div class="lg:col-span-3 h-48 border-b border-slate-100 pb-4 mb-2 relative">
-                            <h4 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> 感度推移 (直近6ヶ月)</h4>
-                            <div class="absolute inset-0 top-6">
-                                <canvas id="sensitivityTrendChart"></canvas>
-                            </div>
-                        </div>
-                        <!-- Demo Breakdown -->
-                        <div class="h-48 relative">
-                            <h4 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> 性年代別 感度 (Q21)</h4>
-                            <div class="absolute inset-0 top-6">
-                                <canvas id="sensitivityDemoChart"></canvas>
-                            </div>
-                        </div>
-                        <!-- Freq Breakdown -->
-                        <div class="h-48 relative">
-                            <h4 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> 鑑賞頻度別 感度 (Q23)</h4>
-                            <div class="absolute inset-0 top-6">
-                                <canvas id="sensitivityFreqChart"></canvas>
-                            </div>
-                        </div>
-                         <!-- Insight Text -->
-                         <div class="flex items-center justify-center h-48 bg-slate-50 rounded border border-slate-100 p-4">
-                            <div>
-                                <p class="text-xs text-slate-600 mb-2 leading-relaxed"><span class="font-bold text-indigo-600 block mb-1">Insight:</span>20代男性とヘビーユーザー層が予告編から最も強い影響を受けています。</p>
-                                <p class="text-[10px] text-slate-400">※Q8「来場理由」で「予告編」を選択した割合を集計</p>
-                            </div>
-                         </div>
+            <!-- Insight Summary (v3 テイスト) -->
+            <div class="summary-box mb-6">
+                <div class="flex gap-4 items-start">
+                    <div class="shrink-0 text-indigo-500 mt-1"><i data-lucide="lightbulb" class="w-6 h-6"></i></div>
+                    <div class="w-full">
+                        <h3 class="font-bold text-slate-800 text-sm mb-1">分析サマリー <span id="summary-period-badge" class="text-xs font-mono font-bold text-slate-500 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded ml-2">--</span></h3>
+                        <p class="text-slate-600 text-sm leading-relaxed" id="post_insight">--</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Ranking & Positioning -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Ranking -->
-                <div class="solid-card">
-                    <div class="card-header">
-                        <span><i data-lucide="trophy" class="w-3 h-3 inline mr-1"></i>予告編反応ランキング</span>
-                        <span class="text-xs text-slate-400 font-normal">「観たい」回答率</span>
-                    </div>
-                    <div class="card-body flex flex-col justify-between">
-                        <div class="h-64 w-full relative">
-                            <canvas id="trailerRankingChart"></canvas>
+            <!-- Group 1: Initial Reaction -->
+            <section class="analysis-group">
+                <div class="section-header-row">
+                    <div class="section-title">
+                        <div class="icon-box bg-orange-100 text-orange-600"><i data-lucide="flame"></i></div>
+                        <div>
+                            1. 作品評価・熱量 (Evaluation & Heat)
                         </div>
-                        <div class="mt-4 pt-3 border-t border-slate-100">
-                            <div class="bg-indigo-50 rounded p-3 border border-indigo-100">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <i data-lucide="crosshair" class="w-3 h-3 text-indigo-500"></i>
-                                    <span class="text-xs font-bold text-indigo-800">No.1作品(スペース・アドベンチャー)の支持層</span>
-                                </div>
-                                <div class="text-sm font-bold text-slate-800 mb-1">男性 20-30代</div>
-                                <div class="flex items-center gap-2 text-xs text-slate-500">
-                                    <span>支持率</span>
-                                    <div class="flex-grow bg-slate-200 rounded-full h-1.5 w-16">
-                                        <div class="bg-indigo-500 h-1.5 rounded-full" style="width: 65%"></div>
-                                    </div>
-                                    <span class="num-font font-bold">65%</span>
-                                </div>
-                            </div>
+                    </div>
+                </div>
+                <div class="section-desc">
+                    作品の受容性評価。ターゲット数値(Target)と、比較対象(VS)との乖離を一目で把握する。
+                </div>
+
+                <!-- KPI Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- NPS Card -->
+                    <div class="solid-card">
+                        <div class="card-header">
+                            <div><span class="flex items-center text-slate-600"><i data-lucide="heart" class="w-4 h-4 mr-2 text-indigo-400"></i>推奨度 (NPS)</span><p class="card-header-desc">他者に勧めたい度合い（0-10のNPS換算）</p></div>
+                            <span id="rank_nps" class="rank-badge">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="flex items-baseline gap-2 mb-1"><div class="metric-value text-indigo-700" id="val_nps">--</div><span class="text-sm text-slate-400 font-bold">pt</span></div>
+                            <div class="flex items-center gap-3 text-sm mb-4"><span class="text-slate-500">COMP: <span id="comp_val_nps" class="font-bold text-slate-700">--</span></span><span id="diff_nps_pill" class="kpi-diff-pill diff-neu">--</span></div>
+                            <div class="sparkline-container"><canvas id="spark_nps"></canvas></div>
+                        </div>
+                    </div>
+                    <!-- Satisfaction Card -->
+                    <div class="solid-card">
+                        <div class="card-header">
+                            <div><span class="flex items-center text-slate-600"><i data-lucide="star" class="w-4 h-4 mr-2 text-pink-400"></i>満足度 (Sat)</span><p class="card-header-desc">作品の満足度（0-10点）</p></div>
+                            <span id="rank_sat" class="rank-badge">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="flex items-baseline gap-2 mb-1"><div class="metric-value text-pink-600" id="val_sat">--</div><span class="text-sm text-slate-400 font-bold">点</span></div>
+                            <div class="flex items-center gap-3 text-sm mb-4"><span class="text-slate-500">COMP: <span id="comp_val_sat" class="font-bold text-slate-700">--</span></span><span id="diff_sat_pill" class="kpi-diff-pill diff-neu">--</span></div>
+                            <div class="sparkline-container"><canvas id="spark_sat"></canvas></div>
+                        </div>
+                    </div>
+                    <!-- Rewatch Card -->
+                    <div class="solid-card">
+                        <div class="card-header">
+                            <div><span class="flex items-center text-slate-600"><i data-lucide="repeat" class="w-4 h-4 mr-2 text-emerald-400"></i>再鑑賞意向</span><p class="card-header-desc">もう一度映画館で観たいと答えた割合</p></div>
+                            <span id="rank_rewatch" class="rank-badge">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="flex items-baseline gap-2 mb-1"><div class="metric-value text-emerald-600" id="val_rewatch">--</div><span class="text-sm text-slate-400 font-bold">%</span></div>
+                            <div class="flex items-center gap-3 text-sm mb-4"><span class="text-slate-500">COMP: <span id="comp_val_rewatch" class="font-bold text-slate-700">--</span></span><span id="diff_rewatch_pill" class="kpi-diff-pill diff-neu">--</span></div>
+                            <div class="sparkline-container"><canvas id="spark_rewatch"></canvas></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Positioning Map -->
+                <div class="insight-action-box">
+                    <div class="border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 md:pr-6"><div class="ia-header text-indigo-600"><i data-lucide="search" class="w-4 h-4"></i> Insight (分析)</div><p id="post_insight_1" class="ia-text">--</p></div>
+                    <div class="pt-4 md:pt-0 md:pl-6"><div class="ia-header text-emerald-600"><i data-lucide="zap" class="w-4 h-4"></i> Action (対策案)</div><p id="post_action_1" class="ia-text">--</p></div>
+                </div>
+            </section>
+
+            <!-- Group 2: Specific Feedback -->
+             <section class="analysis-group">
+                <div class="section-header-row">
+                    <div class="section-title">
+                        <div class="icon-box bg-indigo-100 text-indigo-600"><i data-lucide="message-circle"></i></div>
+                        2. 具体的な感想 (Specific Feedback)
+                    </div>
+                </div>
+                <div class="section-desc">
+                    観客の生の声（定性情報）から、具体的な評価ポイントを探る。
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="solid-card">
+                        <div class="card-header"><div><span>センチメント分析 (感情傾向)</span><p class="card-header-desc">自由記述の感情傾向（ポジティブ・中立・ネガティブ）</p></div><i data-lucide="smile" class="w-4 h-4 text-slate-400"></i></div>
+                        <div class="card-body"><div class="flex items-center justify-center gap-8 h-full min-h-[200px]"><div class="relative" style="min-width: 180px; min-height: 180px; width: 180px; height: 180px;"><canvas id="sentimentChart"></canvas><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"><span class="text-[10px] text-slate-400">Positive</span><span class="text-2xl font-bold text-emerald-600 num-font" id="sentiment_pos_val">--%</span></div></div><div class="text-xs space-y-3 whitespace-nowrap"><div class="flex items-center gap-2"><span class="w-3 h-3 bg-emerald-500 rounded-full"></span><span class="font-bold text-slate-700">Positive: <span id="leg_pos">--</span>%</span></div><div class="flex items-center gap-2"><span class="w-3 h-3 bg-slate-400 rounded-full"></span><span class="text-slate-600">Neutral: <span id="leg_neu">--</span>%</span></div><div class="flex items-center gap-2"><span class="w-3 h-3 bg-rose-500 rounded-full"></span><span class="font-bold text-slate-700">Negative: <span id="leg_neg">--</span>%</span></div></div></div></div>
+                    </div>
+                    <div class="solid-card">
+                        <div class="card-header"><div><span>話題のキーワード</span><p class="card-header-desc">口コミで多く使われたキーワード</p></div><i data-lucide="hash" class="w-4 h-4 text-slate-400"></i></div>
+                        <div class="card-body"><div class="flex flex-wrap content-start gap-2 h-full overflow-y-auto" id="keyword_container" style="max-height: 160px;"></div></div>
+                    </div>
+                </div>
                 <div class="solid-card">
-                    <div class="card-header">
-                        <span><i data-lucide="map" class="w-3 h-3 inline mr-1"></i>次回作ポジショニング</span>
+                    <div class="card-header flex flex-wrap gap-4 items-center justify-between">
+                        <div><span>実際の感想 (Pick Up)</span><p class="card-header-desc">自由記述コメントの抜粋（フィルター可）</p></div>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="filter-sentiment" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white text-slate-600 focus:border-indigo-500 focus:outline-none cursor-pointer"><option value="all">全ての感情</option><option value="positive">Positive</option><option value="negative">Negative</option></select>
+                            <select id="filter-age" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white text-slate-600 focus:border-indigo-500 focus:outline-none cursor-pointer"><option value="all">全ての年代</option><option value="10代">10代</option><option value="20代">20代</option><option value="30代">30代</option><option value="40代">40代</option><option value="50代+">50代+</option></select>
+                            <select id="filter-freq" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white text-slate-600 focus:border-indigo-500 focus:outline-none cursor-pointer"><option value="all">全ての頻度</option><option value="ヘビー">ヘビー (年12回+)</option><option value="ミドル">ミドル (年5-11回)</option><option value="ライト">ライト (年2-4回)</option><option value="新規">新規 (年1回)</option></select>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="h-64 w-full relative">
-                            <canvas id="trailerPositionChart"></canvas>
+                        <div class="flex justify-between items-center mb-4 px-1"><span id="comment-count" class="text-xs font-bold text-slate-500">--</span></div>
+                        <div class="space-y-3 mb-4" id="comment_list_container"></div>
+                        <button id="load-more-btn" class="w-full py-2 text-xs font-bold text-indigo-600 border border-indigo-200 rounded-md hover:bg-indigo-50 transition-colors flex items-center justify-center hidden">もっと表示する <i data-lucide="chevron-down" class="w-3 h-3 ml-1"></i></button>
+                        <div id="no-comments-msg" class="hidden text-center py-8 text-slate-400 text-sm">条件に一致するコメントはありません。</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Group 3: Box Office Potential -->
+            <section class="analysis-group">
+                <div class="section-header-row">
+                    <div class="section-title"><div class="icon-box bg-violet-100 text-violet-600"><i data-lucide="radar"></i></div>3. 興行ポテンシャル診断 (4次元分析)</div>
+                </div>
+                <div class="section-desc">「満足度 x NPS」に「熱量（バブルの大きさ）」と「コアファン比率」を加味した総合診断。</div>
+
+                <!-- Expanded Full Width Chart Area -->
+                <div class="solid-card mb-6">
+                    <div class="card-header">
+                        <div><span>ヒットポテンシャル診断マップ</span><p class="card-header-desc">満足度×NPS×熱量・コア層の可視化</p></div>
+                        <div class="flex gap-4 text-[10px] text-slate-500">
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-600"></span>Target</span>
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-400"></span>Comp</span>
+                            <span class="flex items-center gap-1"><i data-lucide="circle" class="w-3 h-3"></i>サイズ = 熱量(Heat)</span>
                         </div>
-                        <div class="mt-4 p-3 bg-slate-50 rounded border border-slate-200 text-xs text-slate-600">
-                            <ul class="space-y-1 list-disc list-inside">
-                                <li><strong class="text-slate-800">左上 (若年×Mass)</strong>：Z世代中心にバズる可能性大。SNS拡散推奨。</li>
-                                <li><strong class="text-slate-800">右上 (シニア×Mass)</strong>：王道作品。テレビCM等が有効。</li>
-                                <li><strong class="text-slate-800">下半分 (Niche)</strong>：コア層向け。Webターゲティング推奨。</li>
-                            </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <!-- Chart (Wider) -->
+                            <div class="w-full md:w-3/4" style="height: 400px; position: relative;">
+                                <canvas id="hitPotentialScatter"></canvas>
+                            </div>
+                            <!-- Diagnosis Text Panel -->
+                            <div class="w-full md:w-1/4 flex flex-col gap-4">
+                                <div id="correlation_box_container" class="w-full"></div>
+                                <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                                    <h5 class="font-bold text-xs text-slate-500 mb-2">指標解説</h5>
+                                    <ul class="text-[10px] text-slate-400 space-y-1">
+                                        <li>・X軸: 満足度 (Quality)</li>
+                                        <li>・Y軸: 推奨度 (NPS)</li>
+                                        <li>・円の大きさ: 熱量 (感想文字数)</li>
+                                        <li>・象限: 色でゾーンを分類</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Cross Analysis Table -->
-            <div class="solid-card">
-                <div class="card-header">
-                    <span><i data-lucide="git-compare" class="w-3 h-3 inline mr-1"></i>親和性分析 (この客層は、次これを見る)</span>
+                <!-- Other Potential Metrics -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="solid-card"><div class="card-header"><div><span>ポテンシャル (6軸)</span><p class="card-header-desc">満足度・推奨度・口コミ等の6軸評価</p></div></div><div class="card-body" style="min-height:300px;"><div class="chart-container h-64"><canvas id="postPotentialRadar"></canvas></div></div></div>
+                    <div class="solid-card"><div class="card-header"><div><span>口コミ熱量 (文字数分布)</span><p class="card-header-desc">自由記述の文字数分布・熱量</p></div></div><div class="card-body" style="min-height:300px;"><div class="chart-container h-64"><canvas id="postHeatChart"></canvas></div></div></div>
                 </div>
-                <div class="card-body p-0 overflow-x-auto">
-                    <table class="w-full cs-table">
-                        <thead>
-                            <tr>
-                                <th class="text-left pl-6 min-w-[160px]">現在の鑑賞作品 (Source)</th>
-                                <th class="text-left min-w-[160px]">最も刺さった予告編 (Target)</th>
-                                <th class="text-center w-24 whitespace-nowrap">反応率</th>
-                                <th class="text-center w-24 whitespace-nowrap">シナジー</th>
-                                <th class="text-left min-w-[200px]">推奨アクション</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="text-left pl-6 font-bold text-slate-700">ギャラクシー・ウォーズ</td>
-                                <td class="text-left text-indigo-700 font-bold">スペース・アドベンチャー</td>
-                                <td class="text-center"><span class="num-font font-bold text-slate-700">28.5%</span></td>
-                                <td class="text-center"><span class="status-badge high">High</span></td>
-                                <td class="text-left text-xs text-slate-600">本編前に固定編成 / 相互割引</td>
-                            </tr>
-                            <tr>
-                                <td class="text-left pl-6 font-bold text-slate-700">ラブ・イン・トーキョー</td>
-                                <td class="text-left text-rose-600 font-bold">春の恋人たち</td>
-                                <td class="text-center"><span class="num-font font-bold text-slate-700">31.2%</span></td>
-                                <td class="text-center"><span class="status-badge high">High</span></td>
-                                <td class="text-left text-xs text-slate-600">ムビチケ販売強化 / デート訴求</td>
-                            </tr>
-                            <tr>
-                                <td class="text-left pl-6 font-bold text-slate-700">名探偵の休日</td>
-                                <td class="text-left text-orange-600 font-bold">ミステリー・トレイン</td>
-                                <td class="text-center"><span class="num-font font-bold text-slate-700">18.4%</span></td>
-                                <td class="text-center"><span class="status-badge mid">Mid</span></td>
-                                <td class="text-left text-xs text-slate-600">チラシ配布 / ファミリー訴求</td>
-                            </tr>
-                            <tr>
-                                <td class="text-left pl-6 font-bold text-slate-700">青空の向こう側</td>
-                                <td class="text-left text-slate-500 font-medium">激走！カーチェイス</td>
-                                <td class="text-center"><span class="num-font font-bold text-slate-500">5.2%</span></td>
-                                <td class="text-center"><span class="status-badge low">Low</span></td>
-                                <td class="text-left text-xs text-slate-400">予告編差し替え検討</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="solid-card"><div class="card-header"><div><span>鑑賞回数分布</span><p class="card-header-desc">この作品を何回目で観たか</p></div></div><div class="card-body" style="min-height:200px;"><div class="chart-container h-40"><canvas id="postRepeatChart"></canvas></div></div></div>
+                    <div class="solid-card"><div class="card-header"><div><span>上映フォーマット</span><p class="card-header-desc">通常・IMAX・4DX等の鑑賞フォーマット</p></div></div><div class="card-body" style="min-height:200px;"><div class="chart-container h-40"><canvas id="postFormatChart"></canvas></div></div></div>
                 </div>
-            </div>
+                <div class="insight-action-box mt-6"><div class="border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4"><div class="ia-header text-indigo-600"><i data-lucide="search" class="w-4 h-4"></i> Insight (分析)</div><p id="post_insight_2" class="ia-text">--</p></div><div class="pt-2 md:pt-0 md:pl-4"><div class="ia-header text-emerald-600"><i data-lucide="zap" class="w-4 h-4"></i> Action (対策案)</div><p id="post_action_2" class="ia-text">--</p></div></div>
+            </section>
+
+            <!-- Group 4: Marketing Analysis -->
+            <section class="analysis-group">
+                <div class="section-header-row"><div class="section-title"><div class="icon-box bg-pink-100 text-pink-600"><i data-lucide="megaphone"></i></div>4. マーケティング分析</div></div>
+                <div class="section-desc">決定時期、購入経路、情報源、鑑賞理由から、プロモーション効果を検証する。</div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="solid-card"><div class="card-header"><div><span>Q. いつ頃決めましたか？</span><p class="card-header-desc">観に行くことをいつ決めたか</p></div></div><div class="card-body" style="min-height:200px;"><div class="chart-container h-40"><canvas id="postTimingChart"></canvas></div></div></div>
+                    <div class="solid-card"><div class="card-header"><div><span>Q. チケット購入方法は？</span><p class="card-header-desc">チケットの購入方法</p></div></div><div class="card-body" style="min-height:200px;"><div class="chart-container h-40"><canvas id="postPurchaseChart"></canvas></div></div></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="solid-card"><div class="card-header"><div><span>Q. 情報源（どこで知った？）</span><p class="card-header-desc">作品の情報をどこで知ったか（複数回答）</p></div></div><div class="card-body" style="min-height:360px;"><div class="chart-container h-80"><canvas id="postMarketingSourceChart"></canvas></div></div></div>
+                    <div class="solid-card"><div class="card-header"><div><span>Q. 鑑賞理由（決め手は？）</span><p class="card-header-desc">観ることを決めた理由は何か（複数回答）</p></div></div><div class="card-body" style="min-height:320px;"><div class="chart-container h-64"><canvas id="postMarketingReasonChart"></canvas></div></div></div>
+                </div>
+                <div class="insight-action-box mt-6"><div class="border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4"><div class="ia-header text-indigo-600"><i data-lucide="search" class="w-4 h-4"></i> Insight (分析)</div><p id="post_marketing_insight" class="ia-text">--</p></div><div class="pt-2 md:pt-0 md:pl-4"><div class="ia-header text-emerald-600"><i data-lucide="zap" class="w-4 h-4"></i> Action (対策案)</div><p id="post_marketing_action" class="ia-text">--</p></div></div>
+            </section>
+
+            <!-- Group 5: Viewer Profile Analysis -->
+            <section class="analysis-group">
+                <div class="section-header-row"><div class="section-title"><div class="icon-box bg-blue-100 text-blue-600"><i data-lucide="users"></i></div>5. 鑑賞者プロファイル分析</div></div>
+                <div class="section-desc">性年代、頻度、同行者、鑑賞日時、利用劇場から、具体的なターゲット像を可視化する。</div>
+                <div class="solid-card mb-6"><div class="card-header"><div><span>性年代別構成比</span><p class="card-header-desc">男女・年代別の回答者構成</p></div></div><div class="card-body" style="min-height:180px;"><div class="flex items-stretch h-44"><div class="flex-1 relative"><div class="absolute top-0 left-0 bg-blue-50 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-br z-10">男性</div><canvas id="postDemoChartMale"></canvas></div><div class="w-16 flex flex-col justify-around text-center" style="padding-top:20px;padding-bottom:18px;"><span class="text-xs font-bold text-slate-500">10代</span><span class="text-xs font-bold text-slate-500">20代</span><span class="text-xs font-bold text-slate-500">30代</span><span class="text-xs font-bold text-slate-500">40代</span><span class="text-xs font-bold text-slate-500">50代</span><span class="text-xs font-bold text-slate-500">60代+</span></div><div class="flex-1 relative"><div class="absolute top-0 right-0 bg-pink-50 text-pink-800 text-[10px] font-bold px-2 py-0.5 rounded-bl z-10">女性</div><canvas id="postDemoChartFemale"></canvas></div></div></div></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="solid-card"><div class="card-header"><div><span>鑑賞頻度</span><p class="card-header-desc">普段どれくらい映画館に行く層か</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="postProfileFreqChart"></canvas></div></div></div>
+                    <div class="solid-card"><div class="card-header"><div><span>同行者</span><p class="card-header-desc">1人か、誰かと来たか</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="postProfileCompanionChart"></canvas></div></div></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="solid-card"><div class="card-header"><div><span>鑑賞曜日</span><p class="card-header-desc">何曜日に鑑賞したか</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="postProfileDayChart"></canvas></div></div></div>
+                    <div class="solid-card"><div class="card-header"><div><span>鑑賞時間帯</span><p class="card-header-desc">どの時間帯に鑑賞したか</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="postProfileTimeChart"></canvas></div></div></div>
+                </div>
+                <div class="grid grid-cols-1"><div class="solid-card"><div class="card-header"><div><span>利用劇場 Top 5</span><p class="card-header-desc">鑑賞に利用した劇場の上位</p></div></div><div class="card-body" style="min-height:220px;"><div class="chart-container h-44"><canvas id="postProfileTheaterChart"></canvas></div></div></div></div>
+            </section>
 
         </div>
-
     </main>
 
     <script>
         lucide.createIcons();
-
-        // Chart Config
         Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
         Chart.defaults.color = '#64748b';
-        const colors = { primary: '#4338ca', secondary: '#94a3b8', grid: '#e2e8f0' };
-        const commonOptions = {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } } },
-            scales: { x: { grid: { display: false } }, y: { border: { display: false }, grid: { color: colors.grid, borderDash: [2, 2] } } }
-        };
+        Chart.defaults.scale.grid.color = '#f1f5f9';
 
-        let futureCharts = [];
+        // --- Data Definitions ---
+        const newSourceLabels = ['劇場予告', '他劇場宣伝', 'TVCM', 'TV番組', 'X (Twitter)', 'Instagram', 'YouTube', 'TikTok', 'Facebook', '映画サイト', 'Webニュース', '公式サイト', '雑誌・新聞', 'ラジオ', '知人・家族', '配信', 'その他'];
+        const newFormatLabels = ['通常版 (2D)', 'IMAX', '4DX/MX4D', 'Dolby/Atmos', 'その他'];
+        const timingLabels = ['当日', '2-3日前', '1週間前', '1ヶ月前', 'それ以上前'];
+        const purchaseLabels = ['Web予約', '劇場券売機', '有人窓口', 'コンビニ/他'];
+        const reasonLabels = ['キャスト', '音楽', 'ジャンル', '内容', 'シリーズ', '映像', '監督', '評判', '特典', '他'];
+        const dayLabels = ['月', '火', '水', '木', '金', '土', '日'];
+        const timeLabels = ['午前', '午後', '夕方', '夜間'];
+        const theaterLabels = ['新宿', '渋谷', '池袋', '横浜', '大阪'];
+        const wordCountLabels = ['一言 (~20字)', '短文 (~60字)', '標準 (~140字)', '長文 (140字~)'];
 
-        function switchTab(tabId) {
-            document.getElementById('content-now').classList.add('hidden');
-            document.getElementById('content-future').classList.add('hidden');
-            document.getElementById('nav-now').classList.remove('active');
-            document.getElementById('nav-future').classList.remove('active');
+        // Mock Data Generators
+        const genSource = (type) => { return [10,5,10,5,15,10,10,5,2,5,5,5,2,2,5,2,2]; };
 
-            document.getElementById('content-' + tabId).classList.remove('hidden');
-            document.getElementById('nav-' + tabId).classList.add('active');
-
-            if (tabId === 'future') {
-                setTimeout(() => { futureCharts.forEach(chart => chart.resize()); }, 10);
+        // Rich Comments Generator
+        const genComments = (movieId) => {
+            const base = [
+                { text: "期待以上の出来でした！映像美が素晴らしく、IMAXで観て正解。", age: "20代", gender: "男性", freq: "ヘビー", sentiment: "positive", rating: 5 },
+                { text: "ストーリーに感動しました。ラストシーンは涙が止まりませんでした。", age: "30代", gender: "女性", freq: "ミドル", sentiment: "positive", rating: 5 },
+                { text: "少し中だるみした印象。もう少し短くても良かったかも。", age: "40代", gender: "男性", freq: "ライト", sentiment: "negative", rating: 3 },
+                { text: "音楽が最高！サントラ買います。", age: "20代", gender: "女性", freq: "ヘビー", sentiment: "positive", rating: 5 },
+                { text: "原作ファンとしては納得いかない改変があった。", age: "30代", gender: "男性", freq: "ミドル", sentiment: "negative", rating: 2 },
+                { text: "友達と観に行きましたが、終わった後カフェで語り合いたくなる作品。", age: "10代", gender: "女性", freq: "新規", sentiment: "positive", rating: 4 },
+                { text: "アクションシーンの迫力は凄かったが、脚本が弱い。", age: "50代+", gender: "男性", freq: "ヘビー", sentiment: "positive", rating: 3 },
+                { text: "特典が欲しくて来ましたが、映画自体も楽しめました。", age: "20代", gender: "女性", freq: "ライト", sentiment: "positive", rating: 4 },
+                { text: "音が大きすぎて疲れました。", age: "60代+", gender: "女性", freq: "新規", sentiment: "negative", rating: 2 },
+                { text: "伏線回収が見事。もう一度観に行きます。", age: "30代", gender: "男性", freq: "ミドル", sentiment: "positive", rating: 5 }
+            ];
+            if(movieId === 'movie1') {
+                return base.concat([
+                    { text: "シリーズ完結に相応しい最高のフィナーレ。", age: "30代", gender: "男性", freq: "ヘビー", sentiment: "positive", rating: 5 },
+                    { text: "作画崩壊している箇所が気になった。", age: "20代", gender: "男性", freq: "ミドル", sentiment: "negative", rating: 2 }
+                ]);
+            } else if (movieId === 'movie2') {
+                return base.map(c => c.sentiment === 'positive' ? {...c, text: "キュンキュンしました！デートに最適。"} : c);
             }
-        }
-
-        // Data for Now Playing
-        const nowMovies = {
-            'Sky': { label: '青空の向こう側', color: '#e11d48', nps: 88.2, light: 9, special: 15, food: 20 },
-            'Forest': { label: '森の精霊たち', color: '#059669', nps: 85.5, light: 15, special: 5, food: 18 },
-            'Musical': { label: 'ミュージカル・スター', color: '#db2777', nps: 75.0, light: 20, special: 15, food: 15 },
-            'Galaxy': { label: 'ギャラクシー', color: '#4338ca', nps: 72.4, light: 34, special: 28, food: 52 },
-            'Earth': { label: '地球の記録', color: '#d97706', nps: 70.0, light: 5, special: 0, food: 10 }
+            return base;
         };
 
-        // --- Chart 1: Now Playing Scatter ---
-        const ctxNow = document.getElementById('nowPlayingScatter').getContext('2d');
-        let nowChart = new Chart(ctxNow, {
-            type: 'scatter',
-            data: {
-                datasets: Object.values(nowMovies).map(m => ({
-                    label: m.label,
-                    data: [{x: m.nps, y: m.light, r: m.special}],
-                    backgroundColor: m.color + '99',
-                    borderColor: m.color,
-                    borderWidth: 1
-                }))
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: '推奨熱量 (NPS)', color: '#94a3b8', font: {size: 10} }, min: 30, max: 100, grid: { color: colors.grid, borderDash: [2, 2] }, ticks: { font: { family: 'Manrope' } } },
-                    y: { title: { display: true, text: 'ライト層流入率', color: '#94a3b8', font: {size: 10} }, min: 0, max: 60, grid: { color: colors.grid, borderDash: [2, 2] }, ticks: { font: { family: 'Manrope' } } }
+        const dataSet = {
+            "movie1": {
+                name: "機動戦士ギャラクシー -最終章-",
+                n: 12450, nps: 72.0, sat: 9.0, rewatchRate: 45,
+                post: {
+                    sentimentRatio: [75, 10, 15],
+                    keywords: ['最高', '神作', '号泣', 'ありがとう', '作画', '完結', 'IMAX', 'フィナーレ'],
+                    richComments: genComments('movie1'),
+                    radar: [90, 72, 85, 30, 80, 90],
+                    demo_m: [5,15,25,20,5,0], demo_f: [2,5,8,3,1,1], repeatCount: [20,25,20,15,20], format: [55,25,10,8,2], source: genSource(1), motivation: [10,5,15,40,10,15,5],
+                    frequency: [40,30,20,10], // High core fans (freq > 12)
+                    companion: [60,20,5,15],
+                    profile: { day: [10, 8, 12, 10, 15, 25, 20], time: [10, 40, 30, 20], theater: [15, 12, 10, 8, 5] },
+                    heat: { wordCount: [10, 20, 30, 40], avgLen: 120, positiveRate: 75 }, // High heat
+                    insight: "NPS・リピート意向が高くコアファン層が盤石。",
+                    groups: { 1: {insight:"NPS72と非常に高い。", action:"ハッシュタグCP"}, 2: {insight:"ロングラン傾向。", action:"リピーター特典"} },
+                    marketing: {
+                        timing: [10, 15, 25, 30, 20], purchase: [65, 20, 10, 5], source: [5, 2, 5, 2, 35, 15, 10, 5, 2, 8, 5, 5, 1, 0, 0, 0, 0], reason: [20, 10, 15, 25, 20, 5, 0, 5, 0, 0],
+                        insight: "「1ヶ月以上前」からの予約が多く、シリーズファンが初動を牽引。SNSでの拡散が強く、Web予約比率も高い。",
+                        action: "早期予約層向けに、公開2週目以降の座席開放を早め、リピート鑑賞の予定を立てやすくする施策が有効。"
+                    }
                 },
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } } }
-            }
-        });
-
-        function updateNowChart(mode) {
-            document.getElementById('btn-now-potential').classList.remove('active');
-            document.getElementById('btn-now-revenue').classList.remove('active');
-            document.getElementById('btn-now-' + mode).classList.add('active');
-            const explanationEl = document.getElementById('map-explanation');
-
-            nowChart.data.datasets.forEach((d, i) => {
-                const m = Object.values(nowMovies)[i];
-                if(mode === 'potential') {
-                    d.data[0] = { x: m.nps, y: m.light, r: Math.max(15, m.special * 1.5) };
-                    nowChart.options.scales.x.title.text = '推奨熱量 (NPS)';
-                    nowChart.options.scales.y.title.text = 'ライト層流入率';
-                    explanationEl.innerHTML = `<ul class="space-y-1 list-disc list-inside"><li><strong class="text-slate-800">右上 (大ヒット)</strong>：口コミと大衆性を両立。席数拡大。</li><li><strong class="text-slate-800">右下 (熱狂)</strong>：コアファンが高評価。ロングラン向け。</li></ul>`;
-                } else {
-                    d.data[0] = { x: m.food, y: m.special, r: Math.max(15, m.nps/2) };
-                    nowChart.options.scales.x.title.text = '飲食購入率';
-                    nowChart.options.scales.y.title.text = '特殊形式意向';
-                    explanationEl.innerHTML = `<ul class="space-y-1 list-disc list-inside"><li><strong class="text-slate-800">右上 (ドル箱)</strong>：客単価・利益率が最大。最優先編成。</li><li><strong class="text-slate-800">左下 (薄利)</strong>：単価が低い。回転率（回数）で勝負。</li></ul>`;
+                pre: { interestRate: 60, trends: { interest: [52,54,56,58,59,60,60] }, demo_m:[5,15,25,20,5,0], demo_f:[2,5,8,3,1,1], source:genSource(1), motivation:[10,5,15,40,10,15,5], companion:[60,20,5,15], area:[40,20,15,10,15], freq:[10,20,30,40], q10:[10,15,25,50], q11:[60,30,5,5], q14:[10,30,40,20], q15:[70,15,10,5], q16:[45,30,15,10], q18:[30,20,25,15,10], similar:[{name:'名探偵コナン 紺青の拳',score:88,comment:'同一シリーズ・ファン層・興行パターンが近似'},{name:'ルパン三世 THE FIRST',score:72,comment:'長寿アニメ劇場版・男性コア層・事前予約型'},{name:'鬼滅の刃 無限列車編',score:65,comment:'アニメ大作・初動集中型・幅広い年齢層'}],
+                    insight: "シリーズ完結作として興味あり率が高く、意向推移も上昇傾向。コアファン（男性20-30代・ヘビー層）が中心で、SNS・口コミ経路が効いている。事前予約型が多く、首都圏・Web予約比率が高い。",
+                    groups: {
+                        1: { insight: "鑑賞意向（興味あり率）が業界比で高く、過去7週のトレンドも右肩上がり。モメンタムは良好。", action: "初週の座席確保とIMAX等の特別編成を早めに告知し、ファンの確定予約を前倒しする。" },
+                        2: { insight: "男性20-30代が過半数。ヘビー層・一人鑑賞比率が高く、コアファン主導の興行になりやすい。", action: "コア向け特典・限定物販を用意し、ファンコミュニティ向けの先行案内を強化する。" },
+                        3: { insight: "SNS・口コミ・予告編が主な認知経路。「ストーリー・完結」が鑑賞動機の中心で、シリーズ認知が効いている。", action: "ファン生成コンテンツ（UGC）やハッシュタグキャンペーンを強化し、口コミの連鎖を促す。" },
+                        4: { insight: "「1ヶ月以上前」の決定が多く、首都圏・Web予約が優勢。劇場物販・プレミアム席の需要が見込める。", action: "公開2週目以降の座席を早めに開放し、リピート鑑賞の予定を立てやすくする。劇場周辺のデジタルサイネージで当日券層も取り込む。" }
+                    } },
+                trends: {
+                    nps:[65,68,70,72,71,72,72,71,70,68,68,67,65,65,64,64], // Expanded for timeline
+                    rewatch:[35,40,42,45,45,46,45,44,43,42,42,41,40,40,39,39],
+                    sat:[8.5, 8.8, 9.0, 9.0, 8.9, 9.0, 9.0, 8.9, 8.8, 8.7, 8.7, 8.6, 8.5, 8.5, 8.4, 8.4],
+                    n:[2000, 3500, 5500, 7500, 9500, 11000, 12450, 13500, 14500, 15200, 15800, 16300, 16700, 17000, 17200, 17400]
                 }
-            });
-            nowChart.update();
-        }
-
-        // --- FUTURE Charts (Re-initialized) ---
-        const trendChart = new Chart(document.getElementById('sensitivityTrendChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: ['6月', '7月', '8月', '9月', '10月', '11月'],
-                datasets: [{ label: '予告編感度', data: [30, 32, 35, 33, 34, 35.2], borderColor: colors.primary, backgroundColor: colors.primary + '20', borderWidth: 2, fill: true, tension: 0.3 }]
             },
-            options: { ...commonOptions, scales: { y: { min: 20, max: 50, grid: { borderDash: [2, 2], color: colors.grid } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
-        });
-        futureCharts.push(trendChart);
-
-        const demoChart = new Chart(document.getElementById('sensitivityDemoChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ['男性20-30', '女性20-30', '男性40-50', '女性40-50', '10代'],
-                datasets: [{ label: '感度', data: [45, 30, 25, 20, 55], backgroundColor: [colors.primary, '#db2777', '#60a5fa', '#f472b6', '#fbbf24'], borderRadius: 4 }]
-            },
-            options: { ...commonOptions, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
-        });
-        futureCharts.push(demoChart);
-
-        const freqChart = new Chart(document.getElementById('sensitivityFreqChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ['ヘビー', 'ミドル', 'ライト'],
-                datasets: [{ label: '感度', data: [60, 40, 15], backgroundColor: [colors.primary, '#818cf8', '#c7d2fe'], borderRadius: 4 }]
-            },
-            options: { ...commonOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } }
-        });
-        futureCharts.push(freqChart);
-
-        const rankingChart = new Chart(document.getElementById('trailerRankingChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ['スペース・アドベンチャー', '春の恋人たち', 'ミステリー・トレイン', '激走！カーチェイス', 'アニマル'],
-                datasets: [{ label: '観たい率 (%)', data: [28.5, 20.1, 15.4, 12.0, 8.5], backgroundColor: [colors.primary, '#db2777', '#d97706', '#e11d48', '#059669'], borderRadius: 4 }]
-            },
-            options: { ...commonOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { borderDash: [2, 2], color: colors.grid } }, y: { grid: { display: false } } } }
-        });
-        futureCharts.push(rankingChart);
-
-        const posChart = new Chart(document.getElementById('trailerPositionChart').getContext('2d'), {
-            type: 'scatter',
-            data: {
-                datasets: [
-                    { label: 'スペース', data: [{x: 30, y: 80, r: 15}], backgroundColor: colors.primary },
-                    { label: '春の恋人', data: [{x: 25, y: 60, r: 12}], backgroundColor: '#db2777' },
-                    { label: 'ミステリー', data: [{x: 50, y: 50, r: 10}], backgroundColor: '#d97706' },
-                    { label: 'カーチェイス', data: [{x: 40, y: 30, r: 8}], backgroundColor: '#e11d48' },
-                    { label: 'アニマル', data: [{x: 10, y: 40, r: 6}], backgroundColor: '#059669' }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: 'ターゲット年齢', color: '#94a3b8', font:{size:10} }, min: 0, max: 70, grid: { borderDash: [2, 2], color: colors.grid } },
-                    y: { title: { display: true, text: '関心度 (Mass)', color: '#94a3b8', font:{size:10} }, min: 0, max: 100, grid: { borderDash: [2, 2], color: colors.grid } }
+            "movie2": {
+                name: "恋する喫茶店と雨の日",
+                n: 8320, nps: 58.0, sat: 7.8, rewatchRate: 30,
+                post: {
+                    sentimentRatio: [60, 25, 15],
+                    keywords: ['尊い', 'かっこいい', '可愛い', '切ない', 'デート', '雰囲気', '音楽'],
+                    richComments: genComments('movie2'),
+                    radar: [78, 58, 40, 90, 20, 60], demo_m:[2,5,5,3,1,0], demo_f:[15,35,20,10,2,2], repeatCount: [90,8,1,1,0], format: [95,3,0,2,0], source: genSource(2), motivation: [50,20,10,5,0,10,5],
+                    frequency: [5,15,40,40], // Low core fans
+                    companion: [10,60,25,5],
+                    profile: { day: [12, 10, 15, 12, 20, 18, 13], time: [5, 25, 40, 30], theater: [10, 15, 8, 12, 5] },
+                    heat: { wordCount: [40, 30, 20, 10], avgLen: 45, positiveRate: 60 }, // Low heat
+                    insight: "デート需要が高く、初動は好調。女性20-30代が中心で、リピートより新規・カジュアル層の取り込みが重要。",
+                    groups: {
+                        1: { insight: "NPS58・満足度7.8と平均的。初動は好調だが、再鑑賞意向は業界平均程度。口コミの熱量は中程度。", action: "鑑賞後のSNS投稿を促すフォトスポットや限定フレームを設置し、口コミ拡散を増やす。" },
+                        2: { insight: "ロマンス・デート需要で来場が集中。鑑賞回数は1回が大半で、リピートより新規・カップル層の継続訴求が鍵。", action: "カップル向け割引やデートプラン連携、次の作品へのクロスプロモを検討する。" }
+                    },
+                    marketing: {
+                        timing: [45, 35, 15, 5, 0], purchase: [30, 60, 5, 5], source: [15, 5, 20, 25, 10, 5, 5, 5, 0, 5, 5, 0, 0, 0, 0, 0, 0], reason: [50, 5, 10, 10, 0, 5, 0, 20, 0, 0],
+                        insight: "「当日」「2-3日前」の決定が大半。TVCMや交通広告を見て、その場のノリやデートのついでに観る層が多い。",
+                        action: "当日券需要を取り込むため、劇場周辺でのデジタルサイネージ広告や、天気連動型のSNS投稿を強化する。"
+                    }
                 },
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, usePointStyle: true } } }
+                pre: { interestRate: 70, trends: { interest: [65,66,67,68,69,70,70] }, demo_m:[2,5,5,3,1,0], demo_f:[15,35,20,10,2,2], source:genSource(2), motivation:[50,20,10,5,0,10,5], companion:[10,60,25,5], area:[30,25,15,10,20], freq:[40,40,15,5], q10:[40,30,20,10], q11:[40,40,15,5], q14:[20,40,30,10], q15:[50,30,15,5], q16:[60,10,5,25], q18:[40,30,10,15,5], similar:[{name:'今夜、世界からこの恋が消えても',score:85,comment:'純愛・女性中心・デート需要・TVCM経路が類似'},{name:'余命10年',score:78,comment:'恋愛映画・涙活・20-30代女性が中心'},{name:'四月になれば彼女は',score:70,comment:'青春恋愛・カップル・当日決め層の取り込み'}],
+                    insight: "興味あり率が高く幅広い層に認知。女性・カップル鑑賞が中心で、TVCM・交通広告の効きが良い。決定は当日〜数日前が多く、衝動型・デート需要が強い。",
+                    groups: {
+                        1: { insight: "興味あり率は業界比で高く、認知は広い。トレンドは横ばい寄り。", action: "公開直前のTVCM・SNSで興味あり層にリマインドし、当日券・直前予約の訴求を強化する。" },
+                        2: { insight: "女性20-30代が中心。カップル・友達同士の来場が大半で、ミドル〜ライト層が多い。デート・レジャーとしての位置づけが強い。", action: "カップル席・グループ割引、デートプランとの連携で訴求し、女性向けSNS・インフルエンサー発信を増やす。" },
+                        3: { insight: "TVCM・交通広告・SNSが主な認知経路。「キャスト・雰囲気」が動機の中心。感情訴求型のクリエイティブが効く。", action: "予告編・短尺CMで雰囲気とキャストを前面に。駅・劇場周辺のビジュアル広告を増量する。" },
+                        4: { insight: "「当日」「2-3日前」の決定が大半。窓口・コンビニ購入も一定あり、衝動型・デートのついでに観る層が多い。", action: "劇場周辺のデジタルサイネージ・天気連動SNSで当日券需要を取り込む。土日祝のレイトショーを訴求する。" }
+                    } },
+                trends: {
+                    nps:[50,55,56,58,57,58,58,57,56,55,55,54,54,53,53,53],
+                    rewatch:[25,28,30,30,29,30,30,29,28,27,27,26,26,25,25,25],
+                    sat:[7.5, 7.6, 7.7, 7.8, 7.7, 7.8, 7.8, 7.7, 7.6, 7.5, 7.5, 7.4, 7.4, 7.3, 7.3, 7.3],
+                    n:[1500, 3000, 4500, 5800, 6800, 7800, 8320, 8700, 9000, 9200, 9400, 9500, 9600, 9700, 9800, 9900]
+                }
+            },
+            "movie3": {
+                name: "MISSION: BREAKOUT",
+                n: 15600, nps: 65.0, sat: 9.0, rewatchRate: 40,
+                post: {
+                    sentimentRatio: [80, 5, 15],
+                    keywords: ['迫力', 'スゴイ', 'アクション', 'ハラハラ', 'IMAX', '筋肉', '爆発'],
+                    richComments: genComments('movie3'),
+                    radar: [90, 65, 70, 40, 75, 85], demo_m:[10,20,20,10,5,0], demo_f:[5,10,10,5,3,2], repeatCount: [70,20,5,3,2], format: [35,30,15,15,5], source: genSource(0), motivation: [15,5,5,10,30,30,5],
+                    frequency: [20,30,30,20], // Mid core
+                    companion: [30,30,30,10],
+                    profile: { day: [8, 8, 10, 10, 15, 25, 24], time: [15, 35, 30, 20], theater: [12, 10, 15, 8, 8] },
+                    heat: { wordCount: [20, 40, 30, 10], avgLen: 80, positiveRate: 80 }, // Mid heat
+                    insight: "アクション映画ファンとIMAXファンの期待が高い。満足度・NPSは高く、リピート・高単価フォーマット需要が見込める。",
+                    groups: {
+                        1: { insight: "NPS65・満足度9.0と高評価。口コミの熱量が高く、アクション・IMAX体験を称える声が多い。初動後の口コミが追い風になりやすい。", action: "鑑賞後の感想投稿を促すキャンペーンと、IMAX・4DX等の高単価フォーマットの訴求を強化する。" },
+                        2: { insight: "鑑賞回数2回以上・プレミアム席比率が業界比で高く、コア層の支出意欲が高い。ロングラン・リピート需要の土台がある。", action: "リピーター向け割引・限定特典で2回目来場を促し、IMAX残席情報をSNSでこまめに発信する。" }
+                    },
+                    marketing: {
+                        timing: [20, 40, 30, 10, 0], purchase: [50, 40, 5, 5], source: [15, 10, 10, 5, 10, 5, 20, 0, 0, 10, 5, 10, 0, 0, 0, 0, 0], reason: [10, 5, 15, 10, 0, 40, 5, 10, 5, 0],
+                        insight: "YouTubeの予告編が最大の流入源。映像体験（アクション・IMAX）を求めて来場しており、計画的な鑑賞傾向。",
+                        action: "アクションシーンの切り抜き動画広告をYouTubeで増量し、IMAX上映の残席情報をSNSでこまめに発信する。"
+                    }
+                },
+                pre: { interestRate: 55, trends: { interest: [48,50,52,53,54,55,55] }, demo_m:[10,20,20,10,5,0], demo_f:[5,10,10,5,3,2], source:genSource(0), motivation:[15,5,5,10,30,30,5], companion:[30,30,30,10], area:[35,25,20,10,10], freq:[20,30,30,20], q10:[25,25,30,20], q11:[50,40,8,2], q14:[15,35,35,15], q15:[60,20,15,5], q16:[50,20,10,20], q18:[25,25,30,10,10], similar:[{name:'トップガン マーヴェリック',score:82,comment:'ハリウッドアクション・IMAX需要・男性中心'},{name:'ワイルド・スピード / ジェットブレイク',score:75,comment:'大作アクション・シリーズファン・体験重視'},{name:'ミッション:インポッシブル',score:68,comment:'ミッション系・スパイアクション・コア層の早期反応'}],
+                    insight: "アクション・大作志向の層が中心。YouTube予告編と「映像・体験」動機が強く、計画的な鑑賞・IMAX需要が高い。男性・ヘビー層の割合が大きい。",
+                    groups: {
+                        1: { insight: "興味あり率はやや高めで、意向は緩やかに上昇。アクション・ブロックバスター志向の層が早期から反応している。", action: "予告編公開と同時にIMAX・4DX等の特別編成を告知し、ファンの早期予約を促す。" },
+                        2: { insight: "男性20-40代が中心。一人・友達同士が多く、ヘビー〜ミドル層の割合が高い。体験重視の層が目立つ。", action: "アクションファン向けに特典・限定版を用意し、IMAX・大画面の価値を訴求する。" },
+                        3: { insight: "YouTube・予告編が最大の認知経路。「映像・迫力・体験」が鑑賞動機の中心。クリエイティブはアクションシーン中心が有効。", action: "予告編・アクションシーンの切り抜きをYouTubeで増量し、IMAX体験を強調した配信を行う。" },
+                        4: { insight: "「1週間前〜1ヶ月前」の決定が多く、Web予約・首都圏比率が高い。プレミアム席・物販の需要が見込める。", action: "公開前から座席開放を段階的に行い、IMAX残席をSNSでこまめに発信してリピート・高単価を伸ばす。" }
+                    } },
+                trends: {
+                    nps:[60,63,65,65,64,65,65,66,66,67,67,67,67,67,67,67],
+                    rewatch:[35,38,40,40,39,40,40,41,41,42,42,42,42,42,42,42],
+                    sat:[8.8, 8.9, 9.0, 9.0, 9.0, 9.0, 9.0, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1],
+                    n:[3000, 6000, 9000, 11000, 13000, 14500, 15600, 16500, 17200, 17800, 18200, 18500, 18700, 18800, 18900, 19000]
+                }
+            },
+            "avg": {
+                name: "業界平均", n: 50000, nps: 60.0, sat: 7.6, rewatchRate: 30,
+                post: {
+                    sentimentRatio: [60, 20, 20], keywords: [], richComments: [],
+                    radar: [76, 60, 50, 50, 50, 50], demo_m:[5,10,15,10,5,5], demo_f:[5,10,15,10,5,5], repeatCount: [75,15,5,3,2], format: [70,15,5,5,5], source: genSource(0), motivation: [15,10,15,15,15,20,10],
+                    frequency: [25,25,25,25], // Avg
+                    companion: [40,30,20,10],
+                    profile: { day: [12, 12, 14, 12, 15, 18, 17], time: [15, 35, 30, 20], theater: [10, 10, 10, 10, 10] },
+                    heat: { wordCount: [30, 40, 20, 10], avgLen: 60, positiveRate: 60 },
+                    insight: "業界平均として、NPS・満足度・再鑑賞意向は標準的な水準。比較対象として作品別の強み・弱みの把握に活用する。",
+                    groups: {
+                        1: { insight: "NPS60・満足度7.6・再鑑賞30%程度が業界水準。作品別の相対評価の基準として参照する。", action: "対象作品が平均を上回る項目を強化し、下回る項目はプロモ・興行施策で補う。" },
+                        2: { insight: "鑑賞回数・フォーマット・口コミ熱量は業界平均的。作品別のポテンシャル比較のベースラインとして活用する。", action: "対象作品の強み（リピート・高単価・口コミ）を伸ばし、弱みはキャンペーンで底上げする。" }
+                    },
+                    marketing: {
+                        timing: [30, 35, 20, 10, 5], purchase: [40, 50, 8, 2], source: genSource(0), reason: [20, 10, 15, 15, 10, 10, 5, 10, 0, 5],
+                        insight: "決定時期・購入経路・情報源・鑑賞理由は業界平均的な分布。作品別のマーケティング効果の比較基準として参照する。",
+                        action: "対象作品が平均と比べて強い経路・理由をさらに伸ばし、弱い経路は媒体・クリエイティブを見直す。"
+                    }
+                },
+                pre: { interestRate: 45, trends: { interest: Array(7).fill(45) }, demo_m:[5,10,15,10,5,5], demo_f:[5,10,15,10,5,5], source:genSource(0), motivation:[15,10,15,15,15,20,10], companion:[40,30,20,10], area:[30,20,15,10,25], freq:[25,25,25,25], q10:[25,25,25,25], q11:[45,45,8,2], q14:[20,30,30,20], q15:[50,30,15,5], q16:[40,20,10,30], q18:[30,30,15,15,10], similar:[{name:'参考作品A',score:70,comment:'業界平均との比較基準として参照'},{name:'参考作品B',score:60,comment:'ターゲット・興行パターンのベースライン'},{name:'参考作品C',score:50,comment:'認知・意向の比較対象'}],
+                    insight: "業界平均として、鑑賞意向・ターゲット・認知経路・決定時期は標準的な分布。作品別の比較基準として活用する。",
+                    groups: {
+                        1: { insight: "興味あり率・意向推移は業界平均的な水準。対象作品が平均を上回ればポテンシャル高、下回れば認知・訴求の見直しが有効。", action: "対象作品の興味あり率・トレンドを平均と比較し、強みを伸ばす施策・弱みを補う施策を検討する。" },
+                        2: { insight: "性年代・頻度・同行者は業界平均的な構成。対象作品のターゲットの偏り・広がりを把握する基準として参照する。", action: "対象作品が平均と比べて強いセグメントを重点訴求し、弱いセグメントは媒体・クリエイティブで取り込む。" },
+                        3: { insight: "認知経路・鑑賞動機は業界平均的な分布。媒体効率・クリエイティブ効果の比較基準として活用する。", action: "対象作品で効いている経路・動機をさらに強化し、効いていない経路は配分・内容を見直す。" },
+                        4: { insight: "決定時期・鑑賞エリア・購入経路は業界平均的。興行計画・商圏・チケット戦略の比較基準として参照する。", action: "対象作品の予約型/衝動型・商圏・購入経路を平均と比較し、興行・販売施策を最適化する。" }
+                    } },
+                trends: {
+                    nps:[60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60],
+                    rewatch:[30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+                    sat:[7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6, 7.6],
+                    n:[5000, 10000, 15000, 20000, 25000, 30000, 35000, 38000, 40000, 42000, 43500, 44500, 45000, 45500, 45800, 46000]
+                }
             }
-        });
-        futureCharts.push(posChart);
+        };
 
-        // --- Table Data Logic ---
-        let displayedMovies = [
-            { rank: 1, title: '青空の向こう側', nps: 88.2, light: 9, special: 15, food: 20, group: 40, ai: '熱狂', status: 'high' },
-            { rank: 2, title: '森の精霊たち', nps: 85.5, light: 15, special: 5, food: 18, group: 35, ai: '評価安定', status: 'high' },
-            { rank: 3, title: 'ミュージカル・スター', nps: 75.0, light: 20, special: 15, food: 15, group: 50, ai: '音楽ファン', status: 'mid' },
-            { rank: 4, title: 'ギャラクシー・ウォーズ', nps: 72.4, light: 34, special: 28, food: 52, group: 60, ai: '収益柱', status: 'high' },
-            { rank: 5, title: '地球の記録', nps: 70.0, light: 5, special: 0, food: 10, group: 10, ai: 'コア層', status: 'mid' }
+        const colors = { main: '#4338ca', comp: '#cbd5e1', accent: '#f59e0b', comp2: '#ec4899' };
+        let charts = {};
+        let currentVisibleCount = 5;
+        const countIncrement = 5;
+        let currentMovieComments = [];
+        let currentWeek = 0;
+
+        // Generate Timeline Nav
+        const timelineData = [
+            { id: -8, label: '-8W' },
+            { id: -7, label: '-7W' },
+            { id: -6, label: '-6W' },
+            { id: -5, label: '-5W' },
+            { id: -4, label: '-4W' },
+            { id: -3, label: '-3W' },
+            { id: -2, label: '-2W' },
+            { id: -1, label: '-1W' },
+            { id: 0, label: '公開週' },
+            { id: 1, label: '+1W' },
+            { id: 2, label: '+2W' },
+            { id: 3, label: '+3W' },
+            { id: 4, label: '+4W' },
+            { id: 5, label: '+5W' },
+            { id: 6, label: '+6W' },
+            { id: 7, label: '+7W' }
         ];
 
-        const moreMoviesData = [
-            { rank: 6, title: '愛と追憶のパリ', nps: 68.5, light: 12, special: 2, food: 25, group: 30, ai: 'ロング', status: 'mid' },
-            { rank: 7, title: 'フロンティア2050', nps: 68.0, light: 15, special: 22, food: 40, group: 35, ai: 'SF固定', status: 'mid' },
-            { rank: 8, title: '戦国の覇者', nps: 65.0, light: 10, special: 5, food: 20, group: 20, ai: 'シニア層', status: 'low' },
-            { rank: 9, title: '激走！カーチェイス', nps: 62.0, light: 20, special: 25, food: 40, group: 45, ai: 'アクション', status: 'low' },
-            { rank: 10, title: 'ゾンビ・パニック', nps: 60.0, light: 25, special: 10, food: 48, group: 55, ai: '若年層', status: 'low' }
-        ];
+        // Timeline navigation renderer
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            if(!container) return;
+            container.innerHTML = '';
 
-        let sortConfig = { key: 'nps', direction: 'desc' };
-        let hasLoadedMore = false;
+            let hasAddedPhaseDivider = false;
 
-        function renderTable() {
-            const tbody = document.getElementById('ranking-table-body');
-            tbody.innerHTML = '';
-            displayedMovies.forEach(m => {
-                const badgeClass = m.status === 'high' ? 'bg-indigo-50 text-indigo-700' : m.status === 'mid' ? 'bg-slate-100 text-slate-700' : 'bg-slate-50 text-slate-500 border-slate-200';
-                let rankClass = "bg-slate-400";
-                if(m.rank === 1) rankClass = "rank-1";
-                if(m.rank === 2) rankClass = "rank-2";
-                if(m.rank === 3) rankClass = "rank-3";
+            timelineData.forEach(item => {
+                if (item.id === 0 && !hasAddedPhaseDivider) {
+                    const divider = document.createElement('div');
+                    divider.className = 'phase-divider';
+                    container.appendChild(divider);
+                    hasAddedPhaseDivider = true;
+                }
 
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-slate-50 transition-colors';
-                row.innerHTML = `
-                    <td><span class="rank-sq ${rankClass}">${m.rank}</span></td>
-                    <td class="font-bold text-slate-700">${m.title}</td>
-                    <td class="text-center font-bold num-font">${m.nps.toFixed(1)}</td>
-                    <td class="text-center num-font">${m.light}%</td>
-                    <td class="text-center num-font">${m.special}%</td>
-                    <td class="text-center num-font">${m.food}%</td>
-                    <td class="text-center"><span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">${m.ai}</span></td>
-                `;
-                tbody.appendChild(row);
+                const el = document.createElement('div');
+                el.className = `nav-item ${item.id === currentWeek ? 'active' : ''}`;
+                el.dataset.weekId = item.id; // Store ID
+                if (item.id === 0) el.dataset.week = "0"; // Special styling hook
+
+                el.onclick = () => {
+                    switchTab(item.id);
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                };
+
+                el.innerHTML = `<span class="nav-item-main">${item.label}</span>`;
+                container.appendChild(el);
             });
-            updateSortIcons();
         }
 
-        function applySort() {
-            const key = sortConfig.key;
-            const dir = sortConfig.direction;
-            displayedMovies.sort((a, b) => {
-                let valA = a[key], valB = b[key];
-                if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
-                if (valA < valB) return dir === 'asc' ? -1 : 1;
-                if (valA > valB) return dir === 'asc' ? 1 : -1;
-                return 0;
-            });
-            renderTable();
-        }
+        function switchTab(weekId) {
+            currentWeek = parseInt(weekId);
 
-        function sortMovies(key) {
-            if (sortConfig.key === key) {
-                sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+            // Update Active State
+            document.querySelectorAll('.nav-item').forEach(el => {
+                if(parseInt(el.dataset.weekId) === currentWeek) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+
+            // Logic: Pre (< 0) vs Post (>= 0)
+            const isPre = currentWeek < 0;
+
+            // Toggle Container Visibility
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            if(isPre) {
+                document.getElementById('tab-pre-release').classList.add('active');
+                buildPreReleaseHTML();
             } else {
-                sortConfig.key = key;
-                sortConfig.direction = (key === 'rank' || key === 'title') ? 'asc' : 'desc';
+                document.getElementById('tab-post-release').classList.add('active');
             }
-            applySort();
+
+            // Update data based on week
+            setTimeout(() => { lucide.createIcons(); updateDashboard(); }, 50);
         }
 
-        function updateSortIcons() {
-            document.querySelectorAll('.sort-icon').forEach(icon => {
-                icon.setAttribute('data-lucide', 'arrow-up-down');
-                icon.style.color = '#9ca3af';
-            });
-            const activeIcon = document.getElementById(`icon-${sortConfig.key}`);
-            if (activeIcon) {
-                activeIcon.setAttribute('data-lucide', sortConfig.direction === 'asc' ? 'arrow-up' : 'arrow-down');
-                activeIcon.style.color = '#4338ca';
+        // --- NEW: Update Post Trend Chart (Restored) ---
+        function updatePostTrend(metric, btn) {
+            // Function logic if post trend chart is used (currently hidden/removed)
+            // Kept for compatibility if buttons are present
+            if (btn) {
+                const parent = btn.parentElement;
+                parent.querySelectorAll('.trend-tab-button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
             }
+            // Logic handled in updateDashboard
+        }
+
+        function updateDashboard() {
+            const targetKey = document.getElementById('movieSelector').value;
+            const compareKey = document.getElementById('compareSelector').value;
+
+            // Base Data
+            const tBase = dataSet[targetKey];
+            const cBase = dataSet[compareKey];
+
+            // Helper to simulate weekly changes
+            const getWeeklyData = (base, week) => {
+                const trends = base.trends || {};
+                // If week is negative (pre-release), utilize separate pre-release logic if available,
+                // but for now we just use base data.
+                // For post-release (week >= 0), we use trend array index.
+
+                let nps = base.nps;
+                let sat = base.sat;
+                let rewatch = base.rewatchRate;
+                let n = base.n;
+
+                if (week >= 0) {
+                    const idx = Math.min(week, (trends.nps?.length || 1) - 1);
+                    nps = trends.nps ? trends.nps[idx] : base.nps;
+                    sat = trends.sat ? trends.sat[idx] : base.sat;
+                    rewatch = trends.rewatch ? trends.rewatch[idx] : base.rewatchRate;
+
+                    const idxN = Math.min(week, (trends.n?.length || 1) - 1);
+                    n = trends.n ? trends.n[idxN] : base.n;
+                }
+
+                const post = JSON.parse(JSON.stringify(base.post));
+                return { ...base, n, nps, sat, rewatchRate: rewatch, post };
+            };
+
+            const t = getWeeklyData(tBase, currentWeek);
+            const c = getWeeklyData(cBase, currentWeek);
+
+            document.getElementById('header_n_count').innerText = t.n.toLocaleString();
+
+            // Set Summary Period Badge text
+            const badge = document.getElementById('summary-period-badge');
+            if(badge) {
+                const weekLabel = timelineData.find(d => d.id === currentWeek)?.label || '';
+                badge.innerText = currentWeek < 0 ? `公開前 ${Math.abs(currentWeek)}週` : (currentWeek === 0 ? "公開初週" : `公開 ${currentWeek}週目`);
+            }
+
+            const isPre = currentWeek < 0;
+
+            if (isPre && document.getElementById('pre_insight')) {
+                document.getElementById('pre_insight').innerText = (t.pre.insight != null && t.pre.insight !== '') ? t.pre.insight : '--';
+                if (t.pre.groups) {
+                    for (let i = 1; i <= 4; i++) {
+                        const g = t.pre.groups[i];
+                        const insightVal = (g && g.insight != null && g.insight !== '') ? g.insight : '--';
+                        const actionVal = (g && g.action != null && g.action !== '') ? g.action : '--';
+                        if(document.getElementById(`pre_insight_${i}`)) document.getElementById(`pre_insight_${i}`).innerText = insightVal;
+                        if(document.getElementById(`pre_action_${i}`)) document.getElementById(`pre_action_${i}`).innerText = actionVal;
+                    }
+                }
+                renderBar('preIntentionChart', ['興味あり'], [t.pre.interestRate], c.pre ? [c.pre.interestRate] : null, '#f97316');
+                renderTrend('upcomingTrendChart', t.pre.trends.interest, c.pre ? c.pre.trends.interest : null, ['6週前', '5週前', '4週前', '3週前', '先々週', '先週', '今週']);
+                renderButterflyChart('preDemoChartMale', 'preDemoChartFemale', ['10代', '20代', '30代', '40代', '50代', '60代+'], t.pre.demo_m, t.pre.demo_f, c.pre.demo_m, c.pre.demo_f);
+                renderBar('preFreqChart', ['年1回', '2-4回', '5-11回', '12回+'], t.pre.freq, c.pre.freq, '#64748b');
+                renderBar('preCompanionChart', ['1人', '友人', '恋人', '家族'], t.pre.companion, c.pre.companion, '#4338ca');
+                renderSourceChart('preSourceChart', newSourceLabels, t.pre.source, c.pre.source);
+                renderBar('preMotivationChart', ['キャスト', '音楽', 'ジャンル', '内容', 'シリーズ', '映像', '他'], t.pre.motivation, c.pre.motivation, '#2563eb');
+                renderBar('preTimingChart', ['当日', '2-3日前', '1週間前', '1ヶ月前+'], t.pre.q10, c.pre.q10, '#f97316');
+                renderBar('preTravelTimeChart', ['15分未満', '30分以内', '1時間以内', '1時間以上'], t.pre.q14, c.pre.q14, '#10b981');
+                renderBar('preAreaChart', ['東京', '神奈川', '大阪', '愛知', 'その他'], t.pre.area, c.pre.area, '#64748b');
+                renderBar('preTransportChart', ['電車', '車/バイク', '徒歩', 'バス'], t.pre.q15, c.pre.q15, '#60a5fa');
+                renderBar('preTicketChart', ['Web', '券売機', '窓口', 'その他'], t.pre.q11, c.pre.q11, '#60a5fa');
+                renderBar('preServiceChart', ['フード', 'パンフ', 'グッズ', 'なし'], t.pre.q16, c.pre.q16, '#f97316');
+                renderSimilar(t.pre.similar);
+            }
+
+            if (!isPre && document.getElementById('post_insight')) {
+                document.getElementById('post_insight').innerText = (t.post.insight != null && t.post.insight !== '') ? t.post.insight : '--';
+                if (t.post.groups) {
+                    for (let i = 1; i <= 2; i++) {
+                        const g = t.post.groups[i];
+                        const insightVal = (g && g.insight != null && g.insight !== '') ? g.insight : '--';
+                        const actionVal = (g && g.action != null && g.action !== '') ? g.action : '--';
+                        if(document.getElementById(`post_insight_${i}`)) document.getElementById(`post_insight_${i}`).innerText = insightVal;
+                        if(document.getElementById(`post_action_${i}`)) document.getElementById(`post_action_${i}`).innerText = actionVal;
+                    }
+                }
+
+                updateKPI('nps', t.nps, c.nps, t.trends.nps, c.trends.nps, '', true);
+                updateKPI('sat', t.sat, c.sat, t.trends.sat, c.trends.sat, '', true);
+                updateKPI('rewatch', t.rewatchRate, c.rewatchRate, t.trends.rewatch, c.trends.rewatch, '%', true);
+
+                renderDoughnut('sentimentChart', ['Positive', 'Neutral', 'Negative'], t.post.sentimentRatio, ['#10b981', '#94a3b8', '#ef4444']);
+                document.getElementById('sentiment_pos_val').innerText = t.post.sentimentRatio[0] + "%";
+                document.getElementById('leg_pos').innerText = t.post.sentimentRatio[0];
+                document.getElementById('leg_neu').innerText = t.post.sentimentRatio[1];
+                document.getElementById('leg_neg').innerText = t.post.sentimentRatio[2];
+
+                renderKeywords(t.post.keywords);
+                currentMovieComments = t.post.richComments || [];
+                currentVisibleCount = 5;
+                renderFilteredComments();
+
+                renderScatterChart('hitPotentialScatter', t.nps, t.sat, c.nps, c.sat, t.name, c.name, t.post.heat, c.post.heat, t.post.frequency, c.post.frequency);
+
+                const boxContainer = document.getElementById('correlation_box_container');
+                if(boxContainer) {
+                    const sat = t.sat;
+                    const nps = t.nps;
+                    const heat = t.post.heat ? t.post.heat.avgLen : 60;
+                    const coreRatio = t.post.frequency ? (t.post.frequency[3] + t.post.frequency[2]) : 50;
+
+                    let title = "", desc = "", colorClass = "", icon = "";
+
+                    if (sat >= 8.5 && nps >= 40) {
+                        if (coreRatio > 60) { title="熱狂的ファンベース型 (Cult Hit)"; desc="コアファンの熱量が極めて高い。一般層への拡大が鍵。"; colorClass="bg-purple-50 text-purple-700 border-purple-200"; icon="flame"; }
+                        else if (heat > 80) { title="社会現象ポテンシャル (Viral Hit)"; desc="満足度・推奨度が高く、口コミ熱量も凄い。大ヒットの予兆。"; colorClass="bg-rose-50 text-rose-700 border-rose-200"; icon="trending-up"; }
+                        else { title="優等生ヒット型 (Solid Hit)"; desc="高評価で安定している。派手さはないがロングランが見込める。"; colorClass="bg-indigo-50 text-indigo-700 border-indigo-200"; icon="star"; }
+                    } else if (sat >= 8.0 && nps < 30) {
+                        title="玄人好み・良作型 (Hidden Gem)"; desc="作品の質は高いが、人に勧めるハードルがある（難解・重い等）。"; colorClass="bg-blue-50 text-blue-700 border-blue-200"; icon="award";
+                    } else if (sat < 8.0 && nps >= 30) {
+                        title="話題先行・賛否型 (Buzz Driven)"; desc="話題性やキャストで集客しているが、内容評価は割れている。"; colorClass="bg-amber-50 text-amber-700 border-amber-200"; icon="alert-circle";
+                    } else {
+                        title="要テコ入れ (Underperforming)"; desc="満足度・推奨度ともに課題あり。ターゲットの見直しが必要。"; colorClass="bg-slate-100 text-slate-700 border-slate-200"; icon="help-circle";
+                    }
+                    boxContainer.innerHTML = `<div class="correlation-box ${colorClass}"><div class="cb-icon bg-white/60"><i data-lucide="${icon}"></i></div><div class="cb-content"><h4>${title}</h4><p>${desc}</p></div></div>`;
+                    lucide.createIcons();
+                }
+
+                renderRadar('postPotentialRadar', ['評価', '推奨度', '再鑑賞', 'ライト層', '単価', '熱量'], t.post.radar, c.post.radar);
+                renderBar('postRepeatChart', ['初回', '2回目', '3回目', '4回目', '5回+'], t.post.repeatCount, c.post.repeatCount, '#3b82f6');
+                renderBar('postFormatChart', newFormatLabels, t.post.format, c.post.format, '#64748b');
+
+                if (t.post.heat) {
+                    renderBar('postHeatChart', wordCountLabels, t.post.heat.wordCount, c.post.heat.wordCount, '#6366f1');
+                }
+
+                if (t.post.marketing) {
+                    renderBar('postTimingChart', timingLabels, t.post.marketing.timing, c.post.marketing.timing, '#f97316');
+                    renderBar('postPurchaseChart', purchaseLabels, t.post.marketing.purchase, c.post.marketing.purchase, '#0ea5e9');
+                    renderSourceChart('postMarketingSourceChart', newSourceLabels, t.post.marketing.source, c.post.marketing.source);
+                    renderBar('postMarketingReasonChart', reasonLabels, t.post.marketing.reason, c.post.marketing.reason, '#2563eb');
+
+                    document.getElementById('post_marketing_insight').innerText = (t.post.marketing && t.post.marketing.insight != null && t.post.marketing.insight !== '') ? t.post.marketing.insight : '--';
+                    document.getElementById('post_marketing_action').innerText = (t.post.marketing && t.post.marketing.action != null && t.post.marketing.action !== '') ? t.post.marketing.action : '--';
+                }
+
+                if (t.post.profile) {
+                    renderButterflyChart('postDemoChartMale', 'postDemoChartFemale', ['10代', '20代', '30代', '40代', '50代', '60代+'], t.post.demo_m, t.post.demo_f, c.post.demo_m, c.post.demo_f);
+                    renderBar('postProfileFreqChart', ['年1回', '2-4回', '5-11回', '12回+'], t.post.frequency, c.post.frequency, '#64748b');
+                    renderBar('postProfileCompanionChart', ['1人', '友人', '恋人', '家族'], t.post.companion, c.post.companion, '#4338ca');
+                    renderBar('postProfileDayChart', dayLabels, t.post.profile.day, c.post.profile.day, '#4ade80');
+                    renderBar('postProfileTimeChart', timeLabels, t.post.profile.time, c.post.profile.time, '#f59e0b');
+                    renderSourceChart('postProfileTheaterChart', theaterLabels, t.post.profile.theater, c.post.profile.theater);
+                }
+            }
+        }
+
+        function renderFilteredComments() {
+            const container = document.getElementById('comment_list_container');
+            if(!container) return;
+            container.innerHTML = '';
+            const sentimentFilter = document.getElementById('filter-sentiment').value;
+            const ageFilter = document.getElementById('filter-age').value;
+            const freqFilter = document.getElementById('filter-freq').value;
+            const filtered = currentMovieComments.filter(item => {
+                const matchSentiment = sentimentFilter === 'all' || item.sentiment === sentimentFilter;
+                const matchAge = ageFilter === 'all' || item.age.includes(ageFilter);
+                const matchFreq = freqFilter === 'all' || item.freq.includes(freqFilter);
+                return matchSentiment && matchAge && matchFreq;
+            });
+            const total = filtered.length;
+            const showing = Math.min(currentVisibleCount, total);
+            document.getElementById('comment-count').innerText = `全 ${total} 件中 ${showing} 件を表示`;
+
+            if(total===0) { document.getElementById('no-comments-msg').classList.remove('hidden'); document.getElementById('load-more-btn').classList.add('hidden'); return; }
+            else { document.getElementById('no-comments-msg').classList.add('hidden'); }
+
+            for(let i=0; i<showing; i++){
+                const item = filtered[i];
+                const stars = '★'.repeat(item.rating) + '☆'.repeat(5-item.rating);
+                let freqColor = "bg-slate-100 text-slate-500";
+                if(item.freq.includes("ヘビー")) freqColor = "bg-indigo-100 text-indigo-700 font-bold";
+                else if(item.freq.includes("ミドル")) freqColor = "bg-blue-50 text-blue-600";
+                const sentimentBadge = item.sentiment === 'positive' ? `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">Positive</span>` : `<span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">Negative</span>`;
+                container.insertAdjacentHTML('beforeend', `<div class="comment-card animate-[fadeIn_0.3s_ease-out]"><div class="flex justify-between items-start mb-2">${sentimentBadge}<span class="text-amber-400 font-bold text-xs tracking-widest">${stars}</span></div><p class="text-sm text-slate-800 font-bold mb-3 leading-relaxed">「${item.text}」</p><div class="flex items-center gap-3 text-xs text-slate-500 pt-2 border-t border-slate-100"><span class="flex items-center"><i data-lucide="user" class="w-3 h-3 mr-1"></i>${item.age} ${item.gender}</span><span class="flex items-center"><i data-lucide="ticket" class="w-3 h-3 mr-1"></i><span class="${freqColor} px-1.5 rounded">${item.freq}</span></span></div></div>`);
+            }
+            if(showing >= total) document.getElementById('load-more-btn').classList.add('hidden');
+            else document.getElementById('load-more-btn').classList.remove('hidden');
             lucide.createIcons();
         }
 
-        function loadMoreMovies() {
-            if (!hasLoadedMore) {
-                displayedMovies = [...displayedMovies, ...moreMoviesData];
-                hasLoadedMore = true;
-                document.getElementById('btn-load-more').style.display = 'none';
-                applySort();
-            }
+        function renderScatterChart(id, npsT, satT, npsC, satC, nameT, nameC, heatT, heatC, freqT, freqC) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            if (charts[id]) charts[id].destroy();
+
+            const getRadius = (heat) => { if(!heat) return 10; const len = heat.avgLen || 60; return Math.max(8, Math.min(30, len / 4)); };
+            const rT = getRadius(heatT); const rC = getRadius(heatC);
+            const getCoreRatio = (freq) => freq ? freq[3] + freq[2] : 50; const coreT = getCoreRatio(freqT); const coreC = getCoreRatio(freqC);
+            const satThreshold = 8.0; const npsThreshold = 30;
+            const scatterTooltip = { callbacks: { label: ctx => { const isTarget = ctx.dataset.label === 'Target'; const sat = isTarget ? satT : satC; const nps = isTarget ? npsT : npsC; const name = isTarget ? nameT : nameC; const heat = isTarget ? (heatT?.avgLen || '--') : (heatC?.avgLen || '--'); const core = isTarget ? coreT : coreC; return [`${ctx.dataset.label}: ${name}`, `満足度: ${sat}`, `NPS: ${nps}`, `---`, `熱量 (文字数): ${heat}文字`, `コア層比率: ${core}%`]; } }, displayColors: false, backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { weight: 'bold' }, padding: 12 };
+            const quadrantPlugin = { id: 'quadrantBackground', beforeDraw: (chart) => { const { ctx, chartArea: { top, bottom, left, right, width, height }, scales: { x, y } } = chart; const xMid = x.getPixelForValue(satThreshold); const yMid = y.getPixelForValue(npsThreshold); const cTopRight = 'rgba(254, 242, 242, 0.4)'; const cTopLeft = 'rgba(239, 246, 255, 0.4)'; const cBottomRight = 'rgba(255, 251, 235, 0.4)'; const cBottomLeft = 'rgba(241, 245, 249, 0.4)'; ctx.save(); ctx.fillStyle = cTopRight; ctx.fillRect(xMid, top, right - xMid, yMid - top); ctx.fillStyle = cTopLeft; ctx.fillRect(left, top, xMid - left, yMid - top); ctx.fillStyle = cBottomRight; ctx.fillRect(xMid, yMid, right - xMid, bottom - yMid); ctx.fillStyle = cBottomLeft; ctx.fillRect(left, yMid, xMid - left, bottom - yMid); ctx.font = 'bold 11px "Noto Sans JP", sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ef4444'; ctx.fillText('熱狂的ヒット (Blockbuster)', xMid + (right - xMid)/2, top + 20); ctx.fillStyle = '#3b82f6'; ctx.fillText('高評価・慎重 (Quality/Niche)', left + (xMid - left)/2, top + 20); ctx.fillStyle = '#d97706'; ctx.fillText('話題先行 (Buzz Driven)', xMid + (right - xMid)/2, bottom - 10); ctx.fillStyle = '#64748b'; ctx.fillText('要改善 (Concern)', left + (xMid - left)/2, bottom - 10); ctx.beginPath(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.moveTo(xMid, top); ctx.lineTo(xMid, bottom); ctx.moveTo(left, yMid); ctx.lineTo(right, yMid); ctx.stroke(); ctx.restore(); } };
+            charts[id] = new Chart(ctx, { type: 'bubble', data: { datasets: [ { label: 'Target', data: [{x: satT, y: npsT, r: rT}], backgroundColor: 'rgba(67, 56, 202, 0.7)', borderColor: '#4338ca', borderWidth: 2 }, { label: 'Comp', data: [{x: satC, y: npsC, r: rC}], backgroundColor: 'rgba(148, 163, 184, 0.7)', borderColor: '#94a3b8', borderWidth: 2 } ] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { bottom: 20, left: 20, right: 20, top: 20 } }, scales: { x: { type: 'linear', position: 'bottom', title: { display: true, text: '満足度 (10点満点)', font: { weight: 'bold', size: 11 }, color: '#334155' }, min: 6.0, max: 10.0, grid: { display: false }, ticks: { font: { size: 10 }, color: '#64748b' } }, y: { title: { display: true, text: '推奨度 (NPS)', font: { weight: 'bold', size: 11 }, color: '#334155' }, min: -20, max: 100, grid: { display: false }, ticks: { font: { size: 10 }, color: '#64748b' } } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }, tooltip: scatterTooltip } }, plugins: [quadrantPlugin] });
         }
+        const compRightBorderPlugin = { id: 'compRightBorder', afterDatasetsDraw: (chart) => { if (!chart.options?.plugins?.compRightBorder) return; if (chart.config.type !== 'bar' || chart.config.options?.indexAxis !== 'y') return; const ctx = chart.ctx; let compIndex = -1; if (chart.data?.datasets) { for (let i = 0; i < chart.data.datasets.length; i++) { if (chart.data.datasets[i]?.label === 'Comp') { compIndex = i; break; } } } if (compIndex === -1) return; const meta = chart.getDatasetMeta(compIndex); if (!meta?.data) return; meta.data.forEach(bar => { if (!bar || bar.height <= 0) return; ctx.save(); ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(bar.x, bar.y - bar.height / 2); ctx.lineTo(bar.x, bar.y + bar.height / 2); ctx.stroke(); ctx.restore(); }); } }; Chart.register(compRightBorderPlugin);
+        function makeGapTooltip(dataT, dataC) { return { callbacks: { title: (items) => items[0]?.label || '', label: (ctx) => { const idx = ctx.dataIndex; const tVal = dataT[idx]; const cVal = dataC ? dataC[idx] : null; const lines = [`Target: ${tVal}%`]; if (cVal !== null) { const gap = (tVal - cVal).toFixed(1); lines.push(`Comp: ${cVal}%`); lines.push(`GAP: ${gap >= 0 ? '+' : ''}${gap}%`); } return lines; } }, displayColors: false, backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { weight: 'bold', size: 12 }, bodyFont: { size: 11 }, padding: 10 }; }
+        function renderBar(id, labels, dataT, dataC, color, maxVal) { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const max1 = dataT ? Math.max(...dataT) : 0; const max2 = dataC ? Math.max(...dataC) : 0; let finalMax = maxVal || Math.ceil(Math.max(max1, max2) * 1.1); const datasets = []; if (dataC) { datasets.push({ label: 'Comp', data: dataC, backgroundColor: '#e2e8f0', barPercentage: 1.0, categoryPercentage: 0.6, grouped: false, order: 1 }); } datasets.push({ label: 'Target', data: dataT, backgroundColor: color || colors.main, barPercentage: 0.5, categoryPercentage: 0.6, grouped: false, order: 0 }); charts[id] = new Chart(ctx, { type: 'bar', data: { labels, datasets }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { top: 8, right: 8, bottom: 8, left: 8 } }, scales: { x: { beginAtZero: true, max: finalMax, grid: { display: true, color: '#f1f5f9' }, ticks: { callback: v => v + '%', font: { size: 9 }, color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#334155' } } }, plugins: { legend: { display: false }, compRightBorder: !!dataC, tooltip: makeGapTooltip(dataT, dataC) } } }); }
+        function renderButterflyChart(idMale, idFemale, labels, mT, fT, mC, fC) { const allData = [...(mT||[]), ...(fT||[]), ...(mC||[]), ...(fC||[])]; let finalMax = Math.ceil(Math.max(...allData) * 1.2); const maleTooltip = { callbacks: { title: items => items[0]?.label || '', label: ctx => { const idx = ctx.dataIndex; const lines = [`Target: ${mT[idx]}%`]; if (mC) { lines.push(`Comp: ${mC[idx]}%`); lines.push(`GAP: ${(mT[idx]-mC[idx]) >= 0 ? '+' : ''}${(mT[idx]-mC[idx]).toFixed(1)}%`); } return lines; } }, displayColors: false, backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 10 }; const femaleTooltip = { callbacks: { title: items => items[0]?.label || '', label: ctx => { const idx = ctx.dataIndex; const lines = [`Target: ${fT[idx]}%`]; if (fC) { lines.push(`Comp: ${fC[idx]}%`); lines.push(`GAP: ${(fT[idx]-fC[idx]) >= 0 ? '+' : ''}${(fT[idx]-fC[idx]).toFixed(1)}%`); } return lines; } }, displayColors: false, backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 10 }; const ctxM = document.getElementById(idMale); if (ctxM) { if (charts[idMale]) charts[idMale].destroy(); const dsM = []; if (mC) dsM.push({ label: 'Comp', data: mC, backgroundColor: '#e2e8f0', barPercentage: 1.0, categoryPercentage: 0.75, grouped: false, order: 1 }); dsM.push({ label: 'Target', data: mT, backgroundColor: '#3b82f6', barPercentage: 0.5, categoryPercentage: 0.75, grouped: false, order: 0 }); charts[idMale] = new Chart(ctxM, { type: 'bar', data: { labels, datasets: dsM }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20, bottom: 0 } }, scales: { x: { reverse: true, beginAtZero: true, max: finalMax, grid: { display: true, color: '#f1f5f9' }, ticks: { callback: v => v + '%', font: { size: 9 }, color: '#94a3b8' } }, y: { display: false, grid: { display: false } } }, plugins: { legend: { display: false }, compRightBorder: !!mC, tooltip: maleTooltip } } }); } const ctxF = document.getElementById(idFemale); if (ctxF) { if (charts[idFemale]) charts[idFemale].destroy(); const dsF = []; if (fC) dsF.push({ label: 'Comp', data: fC, backgroundColor: '#e2e8f0', barPercentage: 1.0, categoryPercentage: 0.75, grouped: false, order: 1 }); dsF.push({ label: 'Target', data: fT, backgroundColor: '#ec4899', barPercentage: 0.5, categoryPercentage: 0.75, grouped: false, order: 0 }); charts[idFemale] = new Chart(ctxF, { type: 'bar', data: { labels, datasets: dsF }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20, bottom: 0 } }, scales: { x: { beginAtZero: true, max: finalMax, grid: { display: true, color: '#f1f5f9' }, ticks: { callback: v => v + '%', font: { size: 9 }, color: '#94a3b8' } }, y: { display: false, grid: { display: false } } }, plugins: { legend: { display: false }, compRightBorder: !!fC, tooltip: femaleTooltip } } }); } }
+        function renderDoughnut(id, labels, data, colorsArr) { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const defColors = ['#10b981', '#94a3b8', '#ef4444']; const bgColors = colorsArr || defColors; charts[id] = new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: bgColors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 }, cutout: '55%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}%` } } } } }); }
+        function renderSourceChart(id, labels, dataT, dataC, maxVal) { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const max1 = dataT ? Math.max(...dataT) : 0; const max2 = dataC ? Math.max(...dataC) : 0; let finalMax = maxVal || Math.ceil(Math.max(max1, max2) * 1.1); const indices = labels.map((_, i) => i).sort((a, b) => dataT[b] - dataT[a]); const sortedLabels = indices.map(i => labels[i]); const sortedDataT = indices.map(i => dataT[i]); const sortedDataC = dataC ? indices.map(i => dataC[i]) : null; const datasets = []; if (sortedDataC) { datasets.push({ label: 'Comp', data: sortedDataC, backgroundColor: '#e2e8f0', barPercentage: 1.0, categoryPercentage: 0.6, grouped: false, order: 1 }); } datasets.push({ label: 'Target', data: sortedDataT, backgroundColor: colors.main, barPercentage: 0.5, categoryPercentage: 0.6, grouped: false, order: 0 }); charts[id] = new Chart(ctx, { type: 'bar', data: { labels: sortedLabels, datasets }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: 8 }, scales: { x: { beginAtZero: true, max: finalMax, grid: { display: true, color: '#f1f5f9' }, ticks: { callback: v => v + '%', font: { size: 9 }, color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' }, color: '#334155' } } }, plugins: { legend: { display: false }, compRightBorder: !!sortedDataC, tooltip: makeGapTooltip(sortedDataT, sortedDataC) } } }); }
+        function renderTrend(id, dataT, dataC, labels) { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const xLabels = labels || ['6週前', '5週前', '4週前', '3週前', '先々週', '先週', '今週']; const ds = [ { label: 'Target', data: dataT, borderColor: colors.accent, backgroundColor: colors.accent + '20', fill: true, tension: 0.3, pointRadius: 4 } ]; if (dataC && dataC.length) { ds.push({ label: 'Comp', data: dataC, borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)', fill: true, borderDash: [4, 4], tension: 0.3, pointRadius: 3 }); } const trendTooltip = { callbacks: { label: ctx => { const idx = ctx.dataIndex; const tVal = dataT[idx]; const lines = [`Target: ${tVal}%`]; if (dataC && dataC[idx] != null) { const cVal = dataC[idx]; const gap = (tVal - cVal).toFixed(1); lines.push(`Comp: ${cVal}%`, `GAP: ${gap >= 0 ? '+' : ''}${gap}%`); } return lines; } }, displayColors: false, backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 10 }; charts[id] = new Chart(ctx, { type: 'line', data: { labels: xLabels, datasets: ds }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { font: { size: 9 }, color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#94a3b8' } } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }, tooltip: trendTooltip } } }); }
+        function renderRadar(id, labels, dataT, dataC) { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const ds = [ { label: 'Target', data: dataT, borderColor: colors.main, backgroundColor: colors.main + '30', borderWidth: 2, pointRadius: 4 } ]; if (dataC) { ds.push({ label: 'Comp', data: dataC, borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.15)', borderWidth: 2, borderDash: [4, 4], pointRadius: 3 }); } const radarTooltip = { callbacks: { label: ctx => { const idx = ctx.dataIndex; const tVal = dataT[idx]; const cVal = dataC ? dataC[idx] : null; const lines = [`Target: ${tVal}`]; if (cVal !== null) { const gap = (tVal - cVal).toFixed(1); lines.push(`Comp: ${cVal}`); lines.push(`GAP: ${gap >= 0 ? '+' : ''}${gap}`); } return lines; } }, displayColors: false, backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 10 }; charts[id] = new Chart(ctx, { type: 'radar', data: { labels, datasets: ds }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: 16 }, scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false }, grid: { color: '#e2e8f0' }, pointLabels: { font: { size: 10 }, color: '#334155' } } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }, tooltip: radarTooltip } } }); }
+        function renderSpark(id, dataT, dataC) { const ctx = document.getElementById(id); if (!ctx) return; if (charts[id]) charts[id].destroy(); const colorMap = {'spark_nps': '#4338ca', 'spark_sat': '#db2777', 'spark_rewatch': '#059669'}; const lineColor = colorMap[id] || colors.main; charts[id] = new Chart(ctx, { type: 'line', data: { labels: [1,2,3,4,5,6,7], datasets: [{data:dataT, borderColor:lineColor, borderWidth:2, pointRadius:0, fill:false}, {data:dataC, borderColor:'#94a3b8', borderWidth:1.5, pointRadius:0, borderDash:[2,2], fill:false}] }, options: { responsive: true, maintainAspectRatio: false, scales: {x:{display:false}, y:{display:false, min:Math.min(...dataT.concat(dataC))*0.9, max:Math.max(...dataT.concat(dataC))*1.1}}, plugins:{legend:{display:false}} } }); }
+        function updateKPI(id, val, comp, trendT, trendC, unit='', showBadge=false) { const elVal = document.getElementById(`val_${id}`); if (!elVal) return; const isPct = unit === '%'; elVal.innerHTML = isPct ? `${Number(val).toLocaleString()}` : `${Number(val).toLocaleString()}`; const compEl = document.getElementById(`comp_val_${id}`); if (compEl) compEl.textContent = Number(comp).toLocaleString(); const diff = Number((val - comp).toFixed(1)); const pillEl = document.getElementById(`diff_${id}_pill`); if (pillEl) { const sign = diff > 0 ? '+' : ''; const icon = diff > 0 ? '▲' : (diff < 0 ? '▼' : '-'); pillEl.innerText = `${icon} ${Math.abs(diff)}${unit}`; pillEl.className = 'kpi-diff-pill ' + (diff >= 0.1 ? 'diff-pos' : (diff <= -0.1 ? 'diff-neg' : 'diff-neu')); } const rankBadge = document.getElementById(`rank_${id}`); if(rankBadge) { let rank = '-'; if(id === 'nps') { if(val >= 70) rank = 'S (Exc)'; else if(val >= 50) rank = 'A (Good)'; else if(val >= 30) rank = 'B (Avg)'; else rank = 'C (Low)'; } else if(id === 'sat') { if(val >= 9.0) rank = 'S (Exc)'; else if(val >= 8.0) rank = 'A (Good)'; else if(val >= 7.5) rank = 'B (Avg)'; else rank = 'C (Low)'; } else if(id === 'rewatch') { if(val >= 50) rank = 'S (High)'; else if(val >= 40) rank = 'A (Good)'; else if(val >= 30) rank = 'B (Avg)'; else rank = 'C (Low)'; } rankBadge.innerText = rank; } if (trendT && document.getElementById(`spark_${id}`)) renderSpark(`spark_${id}`, trendT, trendC); }
+        function renderKeywords(list) { const el = document.getElementById('keyword_container'); if (!el) return; el.innerHTML = ''; if (!list) return; list.forEach(w => { el.innerHTML += `<span class="keyword-tag">${w}</span>`; }); }
+        function renderSimilar(list) { const el = document.getElementById('similarMoviesContainer'); if (!el) return; el.innerHTML = ''; if (!list) return; const show = list.slice(0, 3); show.forEach((m, i) => { const comment = m.comment || ''; el.innerHTML += `<div class="bg-slate-50 border border-slate-200 rounded p-3 text-left"><div class="text-[10px] text-slate-400 font-bold mb-1">#${i+1} 類似度 ${m.score}%</div><div class="h-20 bg-white rounded mb-2 flex items-center justify-center text-xs text-slate-200 font-bold">Img</div><div class="text-sm font-bold text-slate-700 leading-tight mb-2">${m.name}</div><p class="text-xs text-slate-600 leading-snug">${comment}</p></div>`; }); }
+        function buildPreReleaseHTML() { const container = document.getElementById('pre-release-container'); if(!container || container.innerHTML.trim() !== "") return; container.innerHTML = ` <div class="summary-box mb-8"><div class="flex gap-4 items-start"><div class="shrink-0 text-amber-500 mt-1"><i data-lucide="lightbulb" class="w-6 h-6"></i></div><div class="w-full"><h3 class="font-bold text-slate-800 text-sm mb-1">公開前分析サマリー</h3><p class="text-slate-600 text-sm leading-relaxed" id="pre_insight">--</p></div></div></div> <section class="analysis-group"> <div class="section-header-row"><div class="section-title"><div class="icon-box bg-orange-100 text-orange-600"><i data-lucide="trending-up"></i></div>1. 興行規模とモメンタム</div></div> <div class="section-desc">この作品は現在どの程度の「ポテンシャル」があり、その「勢い」は加速しているか？</div> <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"> <div class="solid-card"><div class="card-header"><div><span>鑑賞意向</span><p class="card-header-desc">本作品に興味ありと回答した割合（チェック率）　<span class="inline-block w-3 h-3 rounded-sm bg-orange-500 align-middle"></span> Target　<span class="inline-block w-3 h-3 rounded-sm bg-slate-300 align-middle"></span> Comp</p></div></div><div class="card-body" style="min-height:240px;"><div class="chart-container h-48"><canvas id="preIntentionChart"></canvas></div></div></div> <div class="solid-card"><div class="card-header"><div><span>鑑賞意向推移</span><p class="card-header-desc">過去7週間の興味あり率の推移</p></div><span class="badge badge-info">Momentum</span></div><div class="card-body" style="min-height:240px;"><div class="chart-container h-48"><canvas id="upcomingTrendChart"></canvas></div></div></div> </div> <div class="insight-action-box"><div class="border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4"><div class="ia-header text-indigo-600"><i data-lucide="search" class="w-4 h-4"></i> Insight (分析)</div><p id="pre_insight_1" class="ia-text">--</p></div><div class="pt-2 md:pt-0 md:pl-4"><div class="ia-header text-emerald-600"><i data-lucide="zap" class="w-4 h-4"></i> Action (対策案)</div><p id="pre_action_1" class="ia-text">--</p></div></div> </section> <section class="analysis-group"> <div class="section-header-row"><div class="section-title"><div class="icon-box bg-blue-100 text-blue-600"><i data-lucide="users"></i></div>2. ターゲット解像度</div></div> <div class="section-desc">誰が観ようとしているのか？「コアファン」か「ライト層」か？誰と来るのか？</div> <div class="solid-card mb-6"><div class="card-header"><div><span>性年代別構成比</span><p class="card-header-desc">男女・年代別の回答者構成</p></div></div><div class="card-body" style="min-height:180px;"><div class="flex items-stretch h-44"><div class="flex-1 relative"><div class="absolute top-0 left-0 bg-blue-50 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-br z-10">男性</div><canvas id="preDemoChartMale"></canvas></div><div class="w-16 flex flex-col justify-around text-center" style="padding-top:20px;padding-bottom:18px;"><span class="text-xs font-bold text-slate-500">10代</span><span class="text-xs font-bold text-slate-500">20代</span><span class="text-xs font-bold text-slate-500">30代</span><span class="text-xs font-bold text-slate-500">40代</span><span class="text-xs font-bold text-slate-500">50代</span><span class="text-xs font-bold text-slate-500">60代+</span></div><div class="flex-1 relative"><div class="absolute top-0 right-0 bg-pink-50 text-pink-800 text-[10px] font-bold px-2 py-0.5 rounded-bl z-10">女性</div><canvas id="preDemoChartFemale"></canvas></div></div></div></div> <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"> <div class="solid-card"><div class="card-header"><div><span>映画鑑賞頻度 (Q23)</span><p class="card-header-desc">普段どれくらい映画館に行く層か？</p></div></div><div class="card-body" style="min-height:200px;"><div class="chart-container h-36"><canvas id="preFreqChart"></canvas></div></div></div> <div class="solid-card"><div class="card-header"><div><span>同行者 (Q24)</span><p class="card-header-desc">1人(集中)か、誰か(レジャー)と来るか</p></div></div><div class="card-body" style="min-height:200px;"><div class="chart-container h-36"><canvas id="preCompanionChart"></canvas></div></div></div> </div> <div class="insight-action-box"><div class="border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4"><div class="ia-header text-indigo-600"><i data-lucide="search" class="w-4 h-4"></i> Insight (分析)</div><p id="pre_insight_2" class="ia-text">--</p></div><div class="pt-2 md:pt-0 md:pl-4"><div class="ia-header text-emerald-600"><i data-lucide="zap" class="w-4 h-4"></i> Action (対策案)</div><p id="pre_action_2" class="ia-text">--</p></div></div> </section> <section class="analysis-group"> <div class="section-header-row"><div class="section-title"><div class="icon-box bg-pink-100 text-pink-600"><i data-lucide="megaphone"></i></div>3. 宣伝検証</div></div> <div class="section-desc">どこで知ったか（媒体効率）？ 何に惹かれたか（クリエイティブ検証）？</div> <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"> <div class="solid-card"><div class="card-header"><div><span>認知経路 (Where)</span><p class="card-header-desc">作品の情報をどこで知ったか（複数回答）</p></div></div><div class="card-body" style="min-height:380px;"><div class="chart-container h-80"><canvas id="preSourceChart"></canvas></div></div></div> <div class="solid-card"><div class="card-header"><div><span>鑑賞動機 (Why)</span><p class="card-header-desc">観ることを決めた理由は何か（複数回答）</p></div></div><div class="card-body" style="min-height:260px;"><div class="chart-container h-52"><canvas id="preMotivationChart"></canvas></div></div></div> </div> <div class="insight-action-box"><div class="border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4"><div class="ia-header text-indigo-600"><i data-lucide="search" class="w-4 h-4"></i> Insight (分析)</div><p id="pre_insight_3" class="ia-text">--</p></div><div class="pt-2 md:pt-0 md:pl-4"><div class="ia-header text-emerald-600"><i data-lucide="zap" class="w-4 h-4"></i> Action (対策案)</div><p id="pre_action_3" class="ia-text">--</p></div></div> </section> <section class="analysis-group"> <div class="section-header-row"><div class="section-title"><div class="icon-box bg-purple-100 text-purple-600"><i data-lucide="map-pin"></i></div>4. 興行対策 (Operations & Booking)</div></div> <div class="section-desc">事前予約は入るか（シフト計画）？ どこから来るか（商圏）？ 物販は売れるか？</div> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> <div class="solid-card"><div class="card-header"><div><span>決定時期 (Q10)</span><p class="card-header-desc">事前予約型か、当日衝動型か？</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-32"><canvas id="preTimingChart"></canvas></div></div></div> <div class="solid-card"><div class="card-header"><div><span>移動時間 (Q14)</span><p class="card-header-desc">劇場までの片道所要時間</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-32"><canvas id="preTravelTimeChart"></canvas></div></div></div> <div class="solid-card"><div class="card-header"><div><span>来場手段 (Q15)</span><p class="card-header-desc">本日はどの手段でお越しになったか</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="preTransportChart"></canvas></div></div></div> </div> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"> <div class="solid-card"><div class="card-header"><div><span>鑑賞エリア</span><p class="card-header-desc">主な居住エリア・来場エリア</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="preAreaChart"></canvas></div></div></div> <div class="solid-card"><div class="card-header"><div><span>購入方法 (Q11)</span><p class="card-header-desc">チケットの購入方法</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="preTicketChart"></canvas></div></div></div> <div class="solid-card"><div class="card-header"><div><span>サービス利用 (Q16)</span><p class="card-header-desc">劇場で利用したサービス（フード・パンフ・グッズ等）</p></div></div><div class="card-body" style="min-height:180px;"><div class="chart-container h-36"><canvas id="preServiceChart"></canvas></div></div></div> </div> <div class="insight-action-box"><div class="border-b md:border-b-0 md:border-r border-slate-200 pb-2 md:pb-0 md:pr-4"><div class="ia-header text-indigo-600"><i data-lucide="search" class="w-4 h-4"></i> Insight (分析)</div><p id="pre_insight_4" class="ia-text">--</p></div><div class="pt-2 md:pt-0 md:pl-4"><div class="ia-header text-emerald-600"><i data-lucide="zap" class="w-4 h-4"></i> Action (対策案)</div><p id="pre_action_4" class="ia-text">--</p></div></div> </section> <section class="analysis-group"> <div class="section-header-row"><div class="section-title"><div class="icon-box bg-teal-100 text-teal-600 mr-3"><i data-lucide="git-compare"></i></div>5. 類似作品分析</div></div> <div class="section-desc">ターゲット・興行パターンが近い作品を参照し、施策の参考にする。</div> <div id="similarMoviesContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div> </section> `; }
 
         document.addEventListener('DOMContentLoaded', () => {
-            updateNowChart('potential');
-            applySort();
-        });
+            renderTimeline();
+            buildPreReleaseHTML();
+            lucide.createIcons();
+            // Default to Opening Week
+            switchTab(0);
 
+            // Comment Filter Listeners
+            ['filter-sentiment', 'filter-age', 'filter-freq'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.addEventListener('change', () => {
+                    currentVisibleCount = countIncrement;
+                    renderFilteredComments();
+                });
+            });
+
+            // Load More Listener
+            const loadBtn = document.getElementById('load-more-btn');
+            if(loadBtn) loadBtn.addEventListener('click', () => {
+                currentVisibleCount += countIncrement;
+                renderFilteredComments();
+            });
+        });
     </script>
 </body>
 </html>
